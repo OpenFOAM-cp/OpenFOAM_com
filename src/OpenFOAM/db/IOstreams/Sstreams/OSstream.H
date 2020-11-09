@@ -60,7 +60,7 @@ class OSstream
 
         fileName name_;
 
-        std::ostream& os_;
+        std::ostream* os_;
 
 
 public:
@@ -81,7 +81,7 @@ public:
         inline OSstream
         (
             std::ostream& os,
-            const string& streamName,
+            const fileName& streamName,
             IOstreamOption streamOpt = IOstreamOption()
         );
 
@@ -89,7 +89,7 @@ public:
         OSstream
         (
             std::ostream& os,
-            const string& streamName,
+            const fileName& streamName,
             IOstreamOption::streamFormat fmt,
             IOstreamOption::versionNumber ver = IOstreamOption::currentVersion,
             IOstreamOption::compressionType cmp = IOstreamOption::UNCOMPRESSED
@@ -118,6 +118,10 @@ public:
 
         //- Get stream flags
         virtual ios_base::fmtflags flags() const;
+
+        //- Associate a different std::ostream with the OSstream
+        //  \return the previously attached stream
+        inline std::ostream& attach(std::ostream& os);
 
 
     // Write Functions
@@ -221,13 +225,13 @@ public:
             //- Access to underlying std::ostream
             virtual std::ostream& stdStream()
             {
-                return os_;
+                return *os_;
             }
 
             //- Const access to underlying std::ostream
             virtual const std::ostream& stdStream() const
             {
-                return os_;
+                return *os_;
             }
 
 

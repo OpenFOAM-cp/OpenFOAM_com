@@ -150,6 +150,9 @@ protected:
             ioState_ = std::ios_base::iostate(0);
         }
 
+        //- Adjustments when attaching a new stream
+        void attach(const std::ios& s);
+
 
 public:
 

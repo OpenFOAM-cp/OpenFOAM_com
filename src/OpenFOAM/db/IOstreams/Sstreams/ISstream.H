@@ -61,7 +61,7 @@ class ISstream
 
         fileName name_;
 
-        std::istream& is_;
+        std::istream* is_;
 
 
     // Private Member Functions
@@ -94,7 +94,7 @@ public:
         inline ISstream
         (
             std::istream& is,
-            const string& streamName,
+            const fileName& streamName,
             IOstreamOption streamOpt = IOstreamOption()
         );
 
@@ -102,7 +102,7 @@ public:
         ISstream
         (
             std::istream& is,
-            const string& streamName,
+            const fileName& streamName,
             IOstreamOption::streamFormat fmt,
             IOstreamOption::versionNumber ver = IOstreamOption::currentVersion,
             IOstreamOption::compressionType cmp = IOstreamOption::UNCOMPRESSED
@@ -135,6 +135,10 @@ public:
 
         //- Return flags of output stream
         virtual ios_base::fmtflags flags() const;
+
+        //- Associate a different std::istream with the ISstream
+        //  \return the previously attached stream
+        inline std::istream& attach(std::istream& is);
 
 
         // Read Functions
@@ -208,13 +212,13 @@ public:
             //- Access to underlying std::istream
             virtual std::istream& stdStream()
             {
-                return is_;
+                return *is_;
             }
 
             //- Const access to underlying std::istream
             virtual const std::istream& stdStream() const
             {
-                return is_;
+                return *is_;
             }
 
 

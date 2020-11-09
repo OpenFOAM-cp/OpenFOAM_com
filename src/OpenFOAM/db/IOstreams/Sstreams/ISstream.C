@@ -323,7 +323,7 @@ Foam::Istream& Foam::ISstream::read(token& t)
             // readScalar determine the validity
             while
             (
-                is_.get(c)
+                is_->get(c)
              && (
                     isdigit(c)
                  || c == '+'
@@ -356,14 +356,14 @@ Foam::Istream& Foam::ISstream::read(token& t)
             }
             buf[nChar] = '\0';  // Terminate string
 
-            setState(is_.rdstate());
-            if (is_.bad())
+            setState(is_->rdstate());
+            if (is_->bad())
             {
                 t.setBad();
             }
             else
             {
-                is_.putback(c);
+                is_->putback(c);
 
                 if (nChar == 1 && buf[0] == '-')
                 {
@@ -805,24 +805,24 @@ Foam::Istream& Foam::ISstream::readVerbatim(std::string& str)
 
 Foam::Istream& Foam::ISstream::read(label& val)
 {
-    is_ >> val;
-    setState(is_.rdstate());
+    (*is_) >> val;
+    setState(is_->rdstate());
     return *this;
 }
 
 
 Foam::Istream& Foam::ISstream::read(floatScalar& val)
 {
-    is_ >> val;
-    setState(is_.rdstate());
+    (*is_) >> val;
+    setState(is_->rdstate());
     return *this;
 }
 
 
 Foam::Istream& Foam::ISstream::read(doubleScalar& val)
 {
-    is_ >> val;
-    setState(is_.rdstate());
+    (*is_) >> val;
+    setState(is_->rdstate());
     return *this;
 }
 
@@ -839,8 +839,8 @@ Foam::Istream& Foam::ISstream::read(char* buf, std::streamsize count)
 
 Foam::Istream& Foam::ISstream::readRaw(char* buf, std::streamsize count)
 {
-    is_.read(buf, count);
-    setState(is_.rdstate());
+    is_->read(buf, count);
+    setState(is_->rdstate());
 
     return *this;
 }
@@ -856,18 +856,18 @@ bool Foam::ISstream::beginRawRead()
     }
 
     readBegin("binaryBlock");
-    setState(is_.rdstate());
+    setState(is_->rdstate());
 
-    return is_.good();
+    return is_->good();
 }
 
 
 bool Foam::ISstream::endRawRead()
 {
     readEnd("binaryBlock");
-    setState(is_.rdstate());
+    setState(is_->rdstate());
 
-    return is_.good();
+    return is_->good();
 }
 
 
@@ -887,13 +887,13 @@ void Foam::ISstream::rewind()
 
 std::ios_base::fmtflags Foam::ISstream::flags() const
 {
-    return is_.flags();
+    return is_->flags();
 }
 
 
 std::ios_base::fmtflags Foam::ISstream::flags(const ios_base::fmtflags f)
 {
-    return is_.flags(f);
+    return is_->flags(f);
 }
 
 

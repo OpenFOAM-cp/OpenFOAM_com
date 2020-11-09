@@ -6,6 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011 OpenFOAM Foundation
+    Copyright (C) 2020 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -38,7 +39,7 @@ void Foam::ISstream::print(Ostream& os) const
     os  << "ISstream: " << name().c_str() << ' ';
 
     IOstream::print(os);
-    IOstream::print(os, is_.rdstate());
+    IOstream::print(os, is_->rdstate());
 }
 
 
@@ -47,7 +48,7 @@ void Foam::OSstream::print(Ostream& os) const
     os  << "OSstream: " << name().c_str() << ' ';
 
     IOstream::print(os);
-    IOstream::print(os, os_.rdstate());
+    IOstream::print(os, os_->rdstate());
 }
 
 

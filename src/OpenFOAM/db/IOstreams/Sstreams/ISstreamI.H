@@ -31,32 +31,43 @@ License
 inline Foam::ISstream::ISstream
 (
     std::istream& is,
-    const string& streamName,
+    const fileName& streamName,
     IOstreamOption streamOpt
 )
 :
     Istream(streamOpt),
     name_(streamName),
-    is_(is)
+    is_(&is)
 {
-    if (is_.good())
+    if (is_->good())
     {
         setOpened();
         setGood();
     }
     else
     {
-        setState(is_.rdstate());
+        setState(is_->rdstate());
     }
 }
 
 
 // * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
 
+inline std::istream& Foam::ISstream::attach(std::istream& is)
+{
+    std::istream* old = is_;
+
+    is_ = &is;
+    IOstream::attach(*is_);
+
+    return *old;
+}
+
+
 inline Foam::ISstream& Foam::ISstream::get(char& c)
 {
-    is_.get(c);
-    setState(is_.rdstate());
+    is_->get(c);
+    setState(is_->rdstate());
 
     if (good() && c == '\n')
     {
@@ -69,14 +80,14 @@ inline Foam::ISstream& Foam::ISstream::get(char& c)
 
 inline int Foam::ISstream::peek()
 {
-    return is_.peek();
+    return is_->peek();
 }
 
 
 inline Foam::ISstream& Foam::ISstream::getLine(std::string& str, char delim)
 {
-    std::getline(is_, str, delim);
-    setState(is_.rdstate());
+    std::getline(*is_, str, delim);
+    setState(is_->rdstate());
 
     if (delim == '\n')
     {
@@ -89,10 +100,10 @@ inline Foam::ISstream& Foam::ISstream::getLine(std::string& str, char delim)
 
 inline std::streamsize Foam::ISstream::getLine(std::nullptr_t, char delim)
 {
-    is_.ignore(std::numeric_limits<std::streamsize>::max(), delim);
-    setState(is_.rdstate());
+    is_->ignore(std::numeric_limits<std::streamsize>::max(), delim);
+    setState(is_->rdstate());
 
-    std::streamsize count = is_.gcount();
+    std::streamsize count = is_->gcount();
 
     if (count && delim == '\n')
     {
@@ -110,12 +121,12 @@ inline Foam::ISstream& Foam::ISstream::putback(const char c)
         --lineNumber_;
     }
 
-    if (!is_.putback(c))
+    if (!is_->putback(c))
     {
         setBad();
     }
 
-    setState(is_.rdstate());
+    setState(is_->rdstate());
 
     return *this;
 }

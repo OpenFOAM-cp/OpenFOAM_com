@@ -26,31 +26,44 @@ License
 
 \*---------------------------------------------------------------------------*/
 
-#include "OSstream.H"
-
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 inline Foam::OSstream::OSstream
 (
     std::ostream& os,
-    const string& streamName,
+    const fileName& streamName,
     IOstreamOption streamOpt
 )
 :
     Ostream(streamOpt),
     name_(streamName),
-    os_(os)
+    os_(&os)
 {
-    if (os_.good())
+    if (os_->good())
     {
         setOpened();
         setGood();
-        os_.precision(precision_);
+        os_->precision(precision_);
     }
     else
     {
-        setState(os_.rdstate());
+        setClosed();
+        setState(os_->rdstate());
     }
+}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+inline std::ostream& Foam::OSstream::attach(std::ostream& os)
+{
+    std::ostream* old = os_;
+
+    os_ = &os;
+    IOstream::attach(*os_);
+    // Leave precision untouched
+
+    return *old;
 }
 
 
