@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2020 ENERCON GmbH
-    Copyright (C) 2020 OpenCFD Ltd.
+    Copyright (C) 2020-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -27,7 +27,6 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "atmOmegaWallFunctionFvPatchScalarField.H"
-#include "nutWallFunctionFvPatchScalarField.H"
 #include "turbulenceModel.H"
 #include "fvMatrix.H"
 #include "addToRunTimeSelectionTable.H"
@@ -45,13 +44,13 @@ void Foam::atmOmegaWallFunctionFvPatchScalarField::calculate
 {
     const label patchi = patch.index();
 
-    const nutWallFunctionFvPatchScalarField& nutw =
-        nutWallFunctionFvPatchScalarField::nutw(turbModel, patchi);
-
     const scalarField& y = turbModel.y()[patchi];
 
     const tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
+
+    tmp<scalarField> tnutw = turbModel.nut(patchi);
+    const scalarField& nutw = tnutw();
 
     const tmp<volScalarField> tk = turbModel.k();
     const volScalarField& k = tk();
@@ -60,7 +59,7 @@ void Foam::atmOmegaWallFunctionFvPatchScalarField::calculate
 
     const scalarField magGradUw(mag(Uw.snGrad()));
 
-    const scalar Cmu25 = pow025(nutw.Cmu());
+    const scalar Cmu25 = pow025(Cmu_);
 
     const scalar t = db().time().timeOutputValue();
     const scalarField z0(z0_->value(t));
@@ -88,14 +87,14 @@ void Foam::atmOmegaWallFunctionFvPatchScalarField::calculate
         const scalar w = cornerWeights[facei];
 
         omega0[celli] +=
-            w*sqrt(k[celli])/(Cmu25*nutw.kappa()*(y[facei] + z0[facei]));
+            w*sqrt(k[celli])/(Cmu25*kappa_*(y[facei] + z0[facei]));
 
         G0[celli] +=
             w
            *(nutw[facei] + nuw[facei])
            *magGradUw[facei]
            *Cmu25*sqrt(k[celli])
-           /(nutw.kappa()*(y[facei] + z0[facei]));
+           /(kappa_*(y[facei] + z0[facei]));
     }
 }
 

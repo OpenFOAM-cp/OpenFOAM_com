@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2016, 2019 OpenFOAM Foundation
-    Copyright (C) 2019-2020 OpenCFD Ltd.
+    Copyright (C) 2019-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -166,7 +166,7 @@ SourceFiles
 #ifndef nutWallFunctionFvPatchScalarField_H
 #define nutWallFunctionFvPatchScalarField_H
 
-#include "fixedValueFvPatchFields.H"
+#include "wallFunctionFvPatchScalarField.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -181,51 +181,16 @@ class turbulenceModel;
 
 class nutWallFunctionFvPatchScalarField
 :
-    public fixedValueFvPatchScalarField
+    public wallFunctionFvPatchScalarField
 {
 protected:
 
-    // Protected Enumerations
-
-        //- Options for the blending treatment of viscous and inertial sublayers
-        enum blendingType
-        {
-            STEPWISE,       //!< "Stepwise switch (discontinuous)"
-            MAX,            //!< "Maximum value switch (discontinuous)"
-            BINOMIAL,       //!< "Binomial blending (smooth)"
-            EXPONENTIAL     //!< "Exponential blending (smooth)"
-        };
-
-        //- Names for blendingType
-        static const Enum<blendingType> blendingTypeNames;
-
-
     // Protected Data
-
-        //- Blending treatment (default = blendingType::STEPWISE)
-        const enum blendingType blending_;
-
-        //- Binomial blending exponent being used when
-        //- blendingType is blendingType::BINOMIAL (default = 4)
-        const scalar n_;
 
         //- Name of velocity field
         //  Default is null (not specified) in which case the velocity is
         //  retrieved from the turbulence model
         word UName_;
-
-        //- Empirical model coefficient
-        scalar Cmu_;
-
-        //- von Kármán constant
-        scalar kappa_;
-
-        //- Wall roughness parameter
-        scalar E_;
-
-        //- Estimated y+ value at the intersection
-        //- of the viscous and inertial sublayers
-        scalar yPlusLam_;
 
 
     // Protected Member Functions
@@ -233,9 +198,6 @@ protected:
         //- Helper to return the velocity field either from the turbulence
         //- model (default) or the mesh database
         virtual const volVectorField& U(const turbulenceModel& turb) const;
-
-        //- Check the type of the patch
-        virtual void checkType();
 
         //- Calculate the turbulent viscosity
         virtual tmp<scalarField> calcNut() const = 0;
@@ -295,37 +257,6 @@ public:
 
 
     // Member Functions
-
-        //- Return Cmu
-        scalar Cmu() const
-        {
-            return Cmu_;
-        }
-
-        //- Return kappa
-        scalar kappa() const
-        {
-            return kappa_;
-        }
-
-        //- Return E
-        scalar E() const
-        {
-            return E_;
-        }
-
-        //- Return the nut patchField for the given wall patch
-        static const nutWallFunctionFvPatchScalarField& nutw
-        (
-            const turbulenceModel& turbModel,
-            const label patchi
-        );
-
-        //- Estimate the y+ at the intersection of the two sublayers
-        static scalar yPlusLam(const scalar kappa, const scalar E);
-
-        //- Return the estimated y+ at the two-sublayer intersection
-        scalar yPlusLam() const;
 
         //- Return the blended nut according to the chosen blending treatment
         scalar blend

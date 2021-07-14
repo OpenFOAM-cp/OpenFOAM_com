@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2016, 2019 OpenFOAM Foundation
-    Copyright (C) 2019-2020 OpenCFD Ltd.
+    Copyright (C) 2019-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -200,7 +200,7 @@ SourceFiles
 #ifndef omegaWallFunctionFvPatchScalarField_H
 #define omegaWallFunctionFvPatchScalarField_H
 
-#include "fixedValueFvPatchField.H"
+#include "wallFunctionFvPatchScalarField.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -215,35 +215,8 @@ class turbulenceModel;
 
 class omegaWallFunctionFvPatchScalarField
 :
-    public fixedValueFvPatchField<scalar>
+    public wallFunctionFvPatchScalarField
 {
-    // Private Enumerations
-
-        //- Options for the blending treatment of viscous and inertial sublayers
-        enum blendingType
-        {
-            STEPWISE,       //!< "Stepwise switch (discontinuous)"
-            MAX,            //!< "Maximum value switch (discontinuous)"
-            BINOMIAL2,      //!< "Binomial blending (smooth) n = 2"
-            BINOMIAL,       //!< "Binomial blending (smooth)"
-            EXPONENTIAL,    //!< "Exponential blending (smooth)"
-            TANH            //!< "Tanh blending (smooth)"
-        };
-
-        //- Names for blendingType
-        static const Enum<blendingType> blendingTypeNames;
-
-
-    // Private Data
-
-        //- Blending treatment (default = blendingType::BINOMIAL2)
-        enum blendingType blending_;
-
-        //- Blending exponent being used when
-        //- blendingType is blendingType::BINOMIAL (default = 2)
-        const scalar n_;
-
-
 protected:
 
     // Protected Data

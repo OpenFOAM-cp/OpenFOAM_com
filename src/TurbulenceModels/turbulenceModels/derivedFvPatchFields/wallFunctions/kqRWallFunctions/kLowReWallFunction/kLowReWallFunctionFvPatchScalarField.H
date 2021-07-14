@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2012-2016, 2019 OpenFOAM Foundation
-    Copyright (C) 2019-2020 OpenCFD Ltd.
+    Copyright (C) 2019-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -100,7 +100,7 @@ SourceFiles
 #ifndef kLowReWallFunctionFvPatchScalarField_H
 #define kLowReWallFunctionFvPatchScalarField_H
 
-#include "fixedValueFvPatchField.H"
+#include "wallFunctionFvPatchScalarField.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -113,7 +113,7 @@ namespace Foam
 
 class kLowReWallFunctionFvPatchScalarField
 :
-    public fixedValueFvPatchField<scalar>
+    public wallFunctionFvPatchScalarField
 {
 protected:
 
