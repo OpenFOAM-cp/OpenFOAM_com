@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2016, 2019 OpenFOAM Foundation
-    Copyright (C) 2019 OpenCFD Ltd.
+    Copyright (C) 2019-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -125,6 +125,16 @@ calcNut() const
 }
 
 
+void Foam::nutkRoughWallFunctionFvPatchScalarField::writeLocalEntries
+(
+    Ostream& os
+) const
+{
+    Cs_.writeEntry("Cs", os);
+    Ks_.writeEntry("Ks", os);
+}
+
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 Foam::nutkRoughWallFunctionFvPatchScalarField::
@@ -228,10 +238,8 @@ void Foam::nutkRoughWallFunctionFvPatchScalarField::write
     Ostream& os
 ) const
 {
-    fvPatchField<scalar>::write(os);
+    nutWallFunctionFvPatchScalarField::write(os);
     writeLocalEntries(os);
-    Cs_.writeEntry("Cs", os);
-    Ks_.writeEntry("Ks", os);
     writeEntry("value", os);
 }
 

@@ -30,6 +30,20 @@ License
 #include "turbulenceModel.H"
 #include "addToRunTimeSelectionTable.H"
 
+// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
+
+void Foam::kLowReWallFunctionFvPatchScalarField::writeLocalEntries
+(
+    Ostream& os
+) const
+{
+    os.writeEntry("Ceps2", Ceps2_);
+    os.writeEntry("Ck", Ck_);
+    os.writeEntry("Bk", Bk_);
+    os.writeEntry("C", C_);
+}
+
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 Foam::kLowReWallFunctionFvPatchScalarField::kLowReWallFunctionFvPatchScalarField
@@ -179,11 +193,9 @@ void Foam::kLowReWallFunctionFvPatchScalarField::write
     Ostream& os
 ) const
 {
-    os.writeEntry("Ceps2", Ceps2_);
-    os.writeEntry("Ck", Ck_);
-    os.writeEntry("Bk", Bk_);
-    os.writeEntry("C", C_);
     wallFunctionFvPatchScalarField::write(os);
+    writeLocalEntries(os);
+    writeEntry("value", os);
 }
 
 

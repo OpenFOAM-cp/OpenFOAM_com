@@ -212,9 +212,8 @@ void Foam::nutWallFunctionFvPatchScalarField::write
     Ostream& os
 ) const
 {
-    fvPatchField<scalar>::write(os);
+    wallFunctionFvPatchScalarField::write(os);
     writeLocalEntries(os);
-    writeEntry("value", os);
 }
 
 

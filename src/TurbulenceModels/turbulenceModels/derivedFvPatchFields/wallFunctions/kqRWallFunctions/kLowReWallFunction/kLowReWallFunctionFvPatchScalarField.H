@@ -132,6 +132,12 @@ protected:
         scalar C_;
 
 
+    // Protected Member Functions
+
+        //- Write local wall function variables
+        void writeLocalEntries(Ostream&) const;
+
+
 public:
 
     //- Runtime type information

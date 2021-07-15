@@ -203,7 +203,7 @@ protected:
         virtual tmp<scalarField> calcNut() const = 0;
 
         //- Write local wall function variables
-        virtual void writeLocalEntries(Ostream&) const;
+        void writeLocalEntries(Ostream&) const;
 
 
 public:

@@ -288,6 +288,21 @@ void Foam::omegaWallFunctionFvPatchScalarField::calculate
 }
 
 
+void Foam::omegaWallFunctionFvPatchScalarField::writeLocalEntries
+(
+    Ostream& os
+) const
+{
+    os.writeEntry("beta1", beta1_);
+    os.writeEntry("blending", blendingTypeNames[blending_]);
+
+    if (blending_ == blendingType::BINOMIAL)
+    {
+        os.writeEntry("n", n_);
+    }
+}
+
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 Foam::omegaWallFunctionFvPatchScalarField::omegaWallFunctionFvPatchScalarField
@@ -612,13 +627,11 @@ void Foam::omegaWallFunctionFvPatchScalarField::manipulateMatrix
 }
 
 
-void Foam::omegaWallFunctionFvPatchScalarField::write
-(
-    Ostream& os
-) const
+void Foam::omegaWallFunctionFvPatchScalarField::write(Ostream& os) const
 {
-    os.writeEntry("beta1", beta1_);
     wallFunctionFvPatchScalarField::write(os);
+    writeLocalEntries(os);
+    writeEntry("value", os);
 }
 
 

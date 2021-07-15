@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2016 OpenFOAM Foundation
-    Copyright (C) 2019 OpenCFD Ltd.
+    Copyright (C) 2019-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -31,7 +31,6 @@ License
 #include "fvPatchFieldMapper.H"
 #include "volFields.H"
 #include "addToRunTimeSelectionTable.H"
-
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
@@ -121,6 +120,16 @@ yPlus() const
     const fvPatchVectorField& Uw = U(turbModel).boundaryField()[patchi];
 
     return y*sqrt(nuw*mag(Uw.snGrad()))/nuw;
+}
+
+
+void Foam::nutLowReWallFunctionFvPatchScalarField::write
+(
+    Ostream& os
+) const
+{
+    fvPatchField<scalar>::write(os);
+    writeEntry("value", os);
 }
 
 

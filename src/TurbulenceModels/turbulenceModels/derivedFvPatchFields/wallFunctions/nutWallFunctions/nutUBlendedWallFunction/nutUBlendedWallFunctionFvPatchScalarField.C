@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2016-2020 OpenCFD Ltd.
+    Copyright (C) 2016-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -118,6 +118,15 @@ Foam::nutUBlendedWallFunctionFvPatchScalarField::calcUTau
 }
 
 
+void Foam::nutUBlendedWallFunctionFvPatchScalarField::writeLocalEntries
+(
+    Ostream& os
+) const
+{
+    os.writeEntry("n", n_);
+}
+
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 Foam::nutUBlendedWallFunctionFvPatchScalarField::
@@ -212,9 +221,8 @@ void Foam::nutUBlendedWallFunctionFvPatchScalarField::write
     Ostream& os
 ) const
 {
-    fvPatchField<scalar>::write(os);
+    nutWallFunctionFvPatchScalarField::write(os);
     writeLocalEntries(os);
-    os.writeEntry("n", n_);
     writeEntry("value", os);
 }
 

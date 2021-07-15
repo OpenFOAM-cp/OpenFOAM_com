@@ -99,6 +99,18 @@ void Foam::atmOmegaWallFunctionFvPatchScalarField::calculate
 }
 
 
+void Foam::atmOmegaWallFunctionFvPatchScalarField::writeLocalEntries
+(
+    Ostream& os
+) const
+{
+    if (z0_)
+    {
+        z0_->writeData(os);
+    }
+}
+
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 Foam::atmOmegaWallFunctionFvPatchScalarField::
@@ -195,8 +207,10 @@ void Foam::atmOmegaWallFunctionFvPatchScalarField::write
     Ostream& os
 ) const
 {
-    omegaWallFunctionFvPatchScalarField::write(os);
-    z0_->writeData(os);
+    wallFunctionFvPatchScalarField::write(os);
+    omegaWallFunctionFvPatchScalarField::writeLocalEntries(os);
+    writeLocalEntries(os);
+    writeEntry("value", os);
 }
 
 

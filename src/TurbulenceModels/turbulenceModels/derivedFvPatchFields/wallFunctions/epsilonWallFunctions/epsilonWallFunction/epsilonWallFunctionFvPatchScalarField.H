@@ -255,6 +255,9 @@ protected:
             return master_;
         }
 
+        //- Write local wall function variables
+        void writeLocalEntries(Ostream&) const;
+
 
 public:
 

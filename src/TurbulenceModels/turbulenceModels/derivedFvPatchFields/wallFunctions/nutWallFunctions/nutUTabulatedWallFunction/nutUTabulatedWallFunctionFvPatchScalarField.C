@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2016 OpenFOAM Foundation
-    Copyright (C) 2019 OpenCFD Ltd.
+    Copyright (C) 2019-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -81,6 +81,15 @@ Foam::nutUTabulatedWallFunctionFvPatchScalarField::calcUPlus
     }
 
     return tuPlus;
+}
+
+
+void Foam::nutUTabulatedWallFunctionFvPatchScalarField::writeLocalEntries
+(
+    Ostream& os
+) const
+{
+    os.writeEntry("uPlusTable", uPlusTableName_);
 }
 
 
@@ -208,8 +217,8 @@ void Foam::nutUTabulatedWallFunctionFvPatchScalarField::write
     Ostream& os
 ) const
 {
-    fvPatchField<scalar>::write(os);
-    os.writeEntry("uPlusTable", uPlusTableName_);
+    nutWallFunctionFvPatchScalarField::write(os);
+    writeLocalEntries(os);
     writeEntry("value", os);
 }
 

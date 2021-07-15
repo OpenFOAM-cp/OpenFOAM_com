@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2016, 2019 OpenFOAM Foundation
-    Copyright (C) 2019 OpenCFD Ltd.
+    Copyright (C) 2019-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -32,7 +32,6 @@ License
 #include "volFields.H"
 #include "wallFvPatch.H"
 #include "addToRunTimeSelectionTable.H"
-
 
 // * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
 
@@ -78,6 +77,20 @@ calcNut() const
     }
 
     return tnutw;
+}
+
+
+void Foam::nutkWallFunctionFvPatchScalarField::writeLocalEntries
+(
+    Ostream& os
+) const
+{
+    os.writeEntry("blending", blendingTypeNames[blending_]);
+
+    if (blending_ == blendingType::BINOMIAL)
+    {
+        os.writeEntry("n", n_);
+    }
 }
 
 
@@ -159,6 +172,17 @@ yPlus() const
     tmp<scalarField> nuw = turbModel.nu(patchi);
 
     return pow025(Cmu_)*y*sqrt(kwc)/nuw;
+}
+
+
+void Foam::nutkWallFunctionFvPatchScalarField::write
+(
+    Ostream& os
+) const
+{
+    nutWallFunctionFvPatchScalarField::write(os);
+    writeLocalEntries(os);
+    writeEntry("value", os);
 }
 
 

@@ -296,6 +296,21 @@ void Foam::epsilonWallFunctionFvPatchScalarField::calculate
 }
 
 
+void Foam::epsilonWallFunctionFvPatchScalarField::writeLocalEntries
+(
+    Ostream& os
+) const
+{
+    os.writeEntry("lowReCorrection", lowReCorrection_);
+    os.writeEntry("blending", blendingTypeNames[blending_]);
+
+    if (blending_ == blendingType::BINOMIAL)
+    {
+        os.writeEntry("n", n_);
+    }
+}
+
+
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
 Foam::epsilonWallFunctionFvPatchScalarField::
@@ -594,8 +609,9 @@ void Foam::epsilonWallFunctionFvPatchScalarField::write
     Ostream& os
 ) const
 {
-    os.writeEntry("lowReCorrection", lowReCorrection_);
     wallFunctionFvPatchScalarField::write(os);
+    writeLocalEntries(os);
+    writeEntry("value", os);
 }
 
 

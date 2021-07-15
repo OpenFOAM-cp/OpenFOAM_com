@@ -97,12 +97,6 @@ void Foam::wallFunctionFvPatchScalarField::writeLocalEntries
     os.writeEntry("Cmu", Cmu_);
     os.writeEntry("kappa", kappa_);
     os.writeEntry("E", E_);
-    os.writeEntry("blending", blendingTypeNames[blending_]);
-
-    if (blending_ == blendingType::BINOMIAL)
-    {
-        os.writeEntry("n", n_);
-    }
 }
 
 
@@ -239,7 +233,6 @@ void Foam::wallFunctionFvPatchScalarField::write
 {
     fvPatchField<scalar>::write(os);
     writeLocalEntries(os);
-    writeEntry("value", os);
 }
 
 
