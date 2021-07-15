@@ -6,6 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2015 OpenFOAM Foundation
+    Copyright (C) 2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -30,7 +31,36 @@ Group
     grpTurbulenceBoundaryConditions
 
 Description
-    Set a constant shear stress as tau0 = -nuEff dU/dn.
+    This boundary condition sets a user-defined shear stress
+    constant and uniform across a given patch by using the expression:
+
+    \f[
+        tau_0 = -\nu_{eff} \frac{d U}{d n}
+    \f]
+
+Usage
+    Example of the boundary condition specification:
+    \verbatim
+    <patchName>
+    {
+        // Mandatory entries
+        type             fixedShearStress;
+        tau              <vector>;
+
+        // Inherited entries
+        ...
+    }
+    \endverbatim
+
+    where the entries mean:
+    \table
+      Property  | Description                      | Type | Reqd | Deflt
+      type      | Type name: fixedShearStress      | word | yes  | -
+      tau       | Shear stress                   | vector | yes  | -
+    \endtable
+
+    The inherited entries are elaborated in:
+      - \link fixedValueFvPatchFields.H \endlink
 
 SourceFiles
     fixedShearStressFvPatchVectorField.C
