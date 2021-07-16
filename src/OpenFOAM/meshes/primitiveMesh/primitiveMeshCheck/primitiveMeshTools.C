@@ -34,6 +34,168 @@ License
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
+void Foam::primitiveMeshTools::updateFaceCentresAndAreas
+(
+    const primitiveMesh& mesh,
+    const UList<label>& faceIDs,
+    const pointField& p,
+    vectorField& fCtrs,
+    vectorField& fAreas
+)
+{
+    const faceList& fs = mesh.faces();
+
+    for (const label facei : faceIDs)
+    {
+        const labelList& f = fs[facei];
+        const label nPoints = f.size();
+
+        // If the face is a triangle, do a direct calculation for efficiency
+        // and to avoid round-off error-related problems
+        if (nPoints == 3)
+        {
+            fCtrs[facei] = (1.0/3.0)*(p[f[0]] + p[f[1]] + p[f[2]]);
+            fAreas[facei] = 0.5*((p[f[1]] - p[f[0]])^(p[f[2]] - p[f[0]]));
+        }
+        else
+        {
+            typedef Vector<solveScalar> solveVector;
+
+            solveVector sumN = Zero;
+            solveScalar sumA = 0.0;
+            solveVector sumAc = Zero;
+
+            solveVector fCentre = p[f[0]];
+            for (label pi = 1; pi < nPoints; pi++)
+            {
+                fCentre += solveVector(p[f[pi]]);
+            }
+
+            fCentre /= nPoints;
+
+            for (label pi = 0; pi < nPoints; pi++)
+            {
+                const label nextPi(pi == nPoints-1 ? 0 : pi+1);
+                const solveVector nextPoint(p[f[nextPi]]);
+                const solveVector thisPoint(p[f[pi]]);
+
+                solveVector c = thisPoint + nextPoint + fCentre;
+                solveVector n = (nextPoint - thisPoint)^(fCentre - thisPoint);
+                solveScalar a = mag(n);
+                sumN += n;
+                sumA += a;
+                sumAc += a*c;
+            }
+
+            // This is to deal with zero-area faces. Mark very small faces
+            // to be detected in e.g., processorPolyPatch.
+            if (sumA < ROOTVSMALL)
+            {
+                fCtrs[facei] = fCentre;
+                fAreas[facei] = Zero;
+            }
+            else
+            {
+                fCtrs[facei] = (1.0/3.0)*sumAc/sumA;
+                fAreas[facei] = 0.5*sumN;
+            }
+        }
+    }
+}
+
+
+void Foam::primitiveMeshTools::updateCellCentresAndVols
+(
+    const primitiveMesh& mesh,
+    const UList<label>& faceIDs,
+    const vectorField& fCtrs,
+    const vectorField& fAreas,
+    vectorField& cellCtrs_s,
+    scalarField& cellVols_s
+)
+{
+    typedef Vector<solveScalar> solveVector;
+
+    PrecisionAdaptor<solveVector, vector> tcellCtrs(cellCtrs_s, false);
+    PrecisionAdaptor<solveScalar, scalar> tcellVols(cellVols_s, false);
+    Field<solveVector>& cellCtrs = tcellCtrs.ref();
+    Field<solveScalar>& cellVols = tcellVols.ref();
+
+    const auto& own = mesh.faceOwner();
+    const auto& nei = mesh.faceNeighbour();
+
+    const vectorField cellCtrs0(cellCtrs);
+
+    bitSet cellIDs(2*faceIDs.size());
+    const label nInternalFaces = mesh.nInternalFaces();
+    for (const label facei : faceIDs)
+    {
+        label cOwn = own[facei];
+        cellCtrs[cOwn] = Zero;
+        cellVols[cOwn] = 0.0;
+        cellIDs.set(cOwn);
+        if (facei < nInternalFaces)
+        {
+            label cNei = nei[facei];
+            cellCtrs[cNei] = Zero;
+            cellVols[cNei] = 0.0;
+            cellIDs.set(cNei);
+        }
+    }
+
+    for (const label facei : faceIDs)
+    {
+        const solveVector fc(fCtrs[facei]);
+        const solveVector fA(fAreas[facei]);
+
+        const label cOwn = own[facei];
+
+        // Calculate 3*face-pyramid volume
+        solveScalar pyr3Vol = fA & (fc - cellCtrs0[cOwn]);
+
+        // Calculate face-pyramid centre
+        solveVector pc = (3.0/4.0)*fc + (1.0/4.0)*cellCtrs0[cOwn];
+
+        // Accumulate volume-weighted face-pyramid centre
+        cellCtrs[cOwn] += pyr3Vol*pc;
+
+        // Accumulate face-pyramid volume
+        cellVols[cOwn] += pyr3Vol;
+
+        if (facei < nInternalFaces)
+        {
+            const label cNei = nei[facei];
+
+            // Calculate 3*face-pyramid volume
+            solveScalar pyr3Vol = fA & (cellCtrs0[cNei] - fc);
+
+            // Calculate face-pyramid centre
+            solveVector pc = (3.0/4.0)*fc + (1.0/4.0)*cellCtrs0[cNei];
+
+            // Accumulate volume-weighted face-pyramid centre
+            cellCtrs[cNei] += pyr3Vol*pc;
+
+            // Accumulate face-pyramid volume
+            cellVols[cNei] += pyr3Vol;
+        }
+    }
+
+    for (const label celli : cellIDs)
+    {
+        if (mag(cellVols[celli]) > VSMALL)
+        {
+            cellCtrs[celli] /= cellVols[celli];
+        }
+        else
+        {
+            cellCtrs[celli] = cellCtrs0[celli];
+        }
+
+        cellVols[celli] *= (1.0/3.0);
+    }
+}
+
+
 void Foam::primitiveMeshTools::makeFaceCentresAndAreas
 (
     const primitiveMesh& mesh,
@@ -155,8 +317,7 @@ void Foam::primitiveMeshTools::makeCellCentresAndVols
         const solveVector fA(fAreas[facei]);
 
         // Calculate 3*face-pyramid volume
-        solveScalar pyr3Vol =
-            fA & (fc - cEst[own[facei]]);
+        solveScalar pyr3Vol = fA & (fc - cEst[own[facei]]);
 
         // Calculate face-pyramid centre
         solveVector pc = (3.0/4.0)*fc + (1.0/4.0)*cEst[own[facei]];
@@ -174,8 +335,7 @@ void Foam::primitiveMeshTools::makeCellCentresAndVols
         const solveVector fA(fAreas[facei]);
 
         // Calculate 3*face-pyramid volume
-        solveScalar pyr3Vol =
-            fA & (cEst[nei[facei]] - fc);
+        solveScalar pyr3Vol = fA & (cEst[nei[facei]] - fc);
 
         // Calculate face-pyramid centre
         solveVector pc = (3.0/4.0)*fc + (1.0/4.0)*cEst[nei[facei]];

@@ -598,8 +598,8 @@ public:
 
             // Mesh motion
 
-                //- Move points, returns volumes swept by faces in motion
-                tmp<scalarField> movePoints
+                //- Move points
+                void movePoints
                 (
                     const pointField& p,
                     const pointField& oldP

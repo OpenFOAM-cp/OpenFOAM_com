@@ -15,6 +15,12 @@ FoamFile
 }
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
+geometry
+{
+    //type            basic;
+    type            solidBody;
+}
+
 ddtSchemes
 {
     default         Euler;

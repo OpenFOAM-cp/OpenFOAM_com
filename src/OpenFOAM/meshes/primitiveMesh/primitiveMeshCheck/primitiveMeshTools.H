@@ -58,6 +58,25 @@ class primitiveMeshTools
 {
 public:
 
+    static void updateFaceCentresAndAreas
+    (
+        const primitiveMesh& mesh,
+        const UList<label>& faceIDs,
+        const pointField& p,
+        vectorField& fCtrs,
+        vectorField& fAreas
+    );
+
+    static void updateCellCentresAndVols
+    (
+        const primitiveMesh& mesh,
+        const UList<label>& cellIDs,
+        const vectorField& fCtrs,
+        const vectorField& fAreas,
+        vectorField& cellCtrs,
+        scalarField& cellVols
+    );
+
     //- Calculate face centres and areas
     static void makeFaceCentresAndAreas
     (

@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2020 OpenCFD Ltd.
+    Copyright (C) 2020-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -26,6 +26,8 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "fvGeometryScheme.H"
+#include "fvMesh.H"
+#include "surfaceFields.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -37,10 +39,48 @@ namespace Foam
 }
 
 
+// * * * * * * * * * * * * Protected Member Functions  * * * * * * * * * * * //
+
+bool Foam::fvGeometryScheme::setMeshPhi() const
+{
+    if (!mesh_.moving())
+    {
+        return false;
+    }
+
+    const pointField& oldPoints = mesh_.oldPoints();
+    const pointField& currPoints = mesh_.points();
+
+    const faceList& faces = mesh_.faces();
+    const scalar rdt = 1.0/mesh_.time().deltaTValue();
+
+    auto& meshPhi = const_cast<fvMesh&>(mesh_).setPhi();
+    auto& meshPhii = meshPhi.primitiveFieldRef();
+    forAll(meshPhii, facei)
+    {
+        const face& f = faces[facei];
+        meshPhii[facei] = f.sweptVol(oldPoints, currPoints)*rdt;
+    }
+
+    auto& meshPhiBf = meshPhi.boundaryFieldRef();
+    for (auto& meshPhip : meshPhiBf)
+    {
+        const auto& pp = meshPhip.patch().patch();
+
+        forAll(pp, facei)
+        {
+            const face& f = pp[facei];
+            meshPhip[facei] = f.sweptVol(oldPoints, currPoints)*rdt;
+        }
+    }
+
+    return true;
+}
+
+
 // * * * * * * * * * * * * * * * * * Selectors * * * * * * * * * * * * * * * //
 
-Foam::tmp<Foam::fvGeometryScheme>
-Foam::fvGeometryScheme::New
+Foam::tmp<Foam::fvGeometryScheme> Foam::fvGeometryScheme::New
 (
     const fvMesh& mesh,
     const dictionary& dict,
@@ -55,10 +95,7 @@ Foam::fvGeometryScheme::New
       : dict.getOrDefault<word>("type", defaultScheme)
     );
 
-    if (debug)
-    {
-        InfoInFunction << "Geometry scheme = " << schemeName << endl;
-    }
+    DebugInFunction << "Geometry scheme = " << schemeName << endl;
 
     auto cstrIter = dictConstructorTablePtr_->cfind(schemeName);
 
@@ -74,6 +111,22 @@ Foam::fvGeometryScheme::New
     }
 
     return cstrIter()(mesh, dict);
+}
+
+
+// * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+void Foam::fvGeometryScheme::movePoints()
+{
+    if (mesh_.moving())
+    {
+        // Set the mesh motion fluxes
+        setMeshPhi();
+
+        // Clear out old geometry
+        // Note: this recreates the old primitiveMesh::movePoints behaviour
+        const_cast<fvMesh&>(mesh_).primitiveMesh::clearGeom();
+    }
 }
 
 

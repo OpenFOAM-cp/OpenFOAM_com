@@ -1156,10 +1156,7 @@ const Foam::pointField& Foam::polyMesh::oldCellCentres() const
 }
 
 
-Foam::tmp<Foam::scalarField> Foam::polyMesh::movePoints
-(
-    const pointField& newPoints
-)
+void Foam::polyMesh::movePoints(const pointField& newPoints)
 {
     DebugInFunction
         << "Moving points for time " << time().value()
@@ -1227,11 +1224,12 @@ Foam::tmp<Foam::scalarField> Foam::polyMesh::movePoints
         tetBasePtIsPtr_->eventNo() = getEvent();
     }
 
-    tmp<scalarField> sweptVols = primitiveMesh::movePoints
-    (
-        points_,
-        oldPoints()
-    );
+    (void)primitiveMesh::movePoints(points_, oldPoints());
+
+    // Update the mesh geometry (via fvGeometryScheme)
+    // - set the mesh flux
+    // - clear out/recalculate stale geometry
+    updateGeom();
 
     // Adjust parallel shared points
     if (globalMeshDataPtr_)
@@ -1279,8 +1277,6 @@ Foam::tmp<Foam::scalarField> Foam::polyMesh::movePoints
         // e.g. fvMesh::write since meshPhi not yet complete.
         polyMesh::write();
     }
-
-    return sweptVols;
 }
 
 

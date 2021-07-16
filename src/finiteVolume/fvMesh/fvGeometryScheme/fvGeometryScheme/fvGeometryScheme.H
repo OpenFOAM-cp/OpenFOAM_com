@@ -69,8 +69,16 @@ class fvGeometryScheme
 
 protected:
 
+    // Protected Data
+
         //- Hold reference to mesh
         const fvMesh& mesh_;
+
+
+    // Protected Memnber Functions
+
+        //- Set the mesh motion flux
+        bool setMeshPhi() const;
 
 
 public:
@@ -127,8 +135,7 @@ public:
         }
 
         //- Update basic geometric properties from provided points
-        virtual void movePoints()
-        {}
+        virtual void movePoints();
 
         //- Return linear difference weighting factors
         virtual tmp<surfaceScalarField> weights() const = 0;
