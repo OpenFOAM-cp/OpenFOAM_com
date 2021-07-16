@@ -40,7 +40,7 @@ calcNut() const
 {
     const label patchi = patch().index();
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -50,15 +50,17 @@ calcNut() const
     );
 
     const scalarField& y = turbModel.y()[patchi];
-    const tmp<volScalarField> tk = turbModel.k();
+
+    tmp<volScalarField> tk = turbModel.k();
     const volScalarField& k = tk();
-    const tmp<scalarField> tnuw = turbModel.nu(patchi);
+
+    tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
 
     const scalar Cmu25 = pow025(Cmu_);
 
-    tmp<scalarField> tnutw(new scalarField(patch().size(), Zero));
-    scalarField& nutw = tnutw.ref();
+    auto tnutw = tmp<scalarField>::New(patch().size(), Zero);
+    auto& nutw = tnutw.ref();
 
     forAll(nutw, facei)
     {
@@ -155,7 +157,7 @@ yPlus() const
 {
     const label patchi = patch().index();
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -166,9 +168,10 @@ yPlus() const
 
     const scalarField& y = turbModel.y()[patchi];
 
-    const tmp<volScalarField> tk = turbModel.k();
+    tmp<volScalarField> tk = turbModel.k();
     const volScalarField& k = tk();
     tmp<scalarField> kwc = k.boundaryField()[patchi].patchInternalField();
+
     tmp<scalarField> nuw = turbModel.nu(patchi);
 
     return pow025(Cmu_)*y*sqrt(kwc)/nuw;

@@ -97,12 +97,12 @@ protected:
 
     // Protected Member Functions
 
+        //- Calculate the turbulent viscosity
+        virtual tmp<scalarField> calcNut() const = 0;
+
         //- Helper to return the velocity field either from the turbulence
         //- model (default) or the mesh database
         virtual const volVectorField& U(const turbulenceModel& turb) const;
-
-        //- Calculate the turbulent viscosity
-        virtual tmp<scalarField> calcNut() const = 0;
 
         //- Write local wall function variables
         void writeLocalEntries(Ostream&) const;

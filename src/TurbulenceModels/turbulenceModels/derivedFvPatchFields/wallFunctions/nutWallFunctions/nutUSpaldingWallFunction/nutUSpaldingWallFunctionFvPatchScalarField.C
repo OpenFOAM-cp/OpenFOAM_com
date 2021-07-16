@@ -40,7 +40,7 @@ Foam::nutUSpaldingWallFunctionFvPatchScalarField::calcNut() const
 {
     const label patchi = patch().index();
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -48,21 +48,20 @@ Foam::nutUSpaldingWallFunctionFvPatchScalarField::calcNut() const
             internalField().group()
         )
     );
+
     const fvPatchVectorField& Uw = U(turbModel).boundaryField()[patchi];
     const scalarField magGradU(mag(Uw.snGrad()));
-    const tmp<scalarField> tnuw = turbModel.nu(patchi);
+
+    tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
 
-
     // Calculate new viscosity
-    tmp<scalarField> tnutw
-    (
+    tmp<scalarField> tnutw =
         max
         (
             scalar(0),
             sqr(calcUTau(magGradU))/(magGradU + ROOTVSMALL) - nuw
-        )
-    );
+        );
 
     if (tolerance_ != 0.01)
     {
@@ -71,7 +70,7 @@ Foam::nutUSpaldingWallFunctionFvPatchScalarField::calcNut() const
 
         // Run ut for one iteration
         scalarField err;
-        tmp<scalarField> UTau(calcUTau(magGradU, 1, err));
+        tmp<scalarField> UTau = calcUTau(magGradU, 1, err);
 
         // Preserve nutw if the initial error (err) already lower than the
         // tolerance.
@@ -110,7 +109,7 @@ Foam::nutUSpaldingWallFunctionFvPatchScalarField::calcUTau
 {
     const label patchi = patch().index();
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -118,18 +117,19 @@ Foam::nutUSpaldingWallFunctionFvPatchScalarField::calcUTau
             internalField().group()
         )
     );
+
     const scalarField& y = turbModel.y()[patchi];
 
     const fvPatchVectorField& Uw = U(turbModel).boundaryField()[patchi];
     const scalarField magUp(mag(Uw.patchInternalField() - Uw));
 
-    const tmp<scalarField> tnuw = turbModel.nu(patchi);
+    tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
 
     const scalarField& nutw = *this;
 
-    tmp<scalarField> tuTau(new scalarField(patch().size(), Zero));
-    scalarField& uTau = tuTau.ref();
+    auto tuTau = tmp<scalarField>::New(patch().size(), Zero);
+    auto& uTau = tuTau.ref();
 
     err.setSize(uTau.size());
     err = 0.0;
@@ -317,7 +317,7 @@ Foam::nutUSpaldingWallFunctionFvPatchScalarField::yPlus() const
 {
     const label patchi = patch().index();
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -325,9 +325,12 @@ Foam::nutUSpaldingWallFunctionFvPatchScalarField::yPlus() const
             internalField().group()
         )
     );
+
     const scalarField& y = turbModel.y()[patchi];
+
     const fvPatchVectorField& Uw = U(turbModel).boundaryField()[patchi];
-    const tmp<scalarField> tnuw = turbModel.nu(patchi);
+
+    tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
 
     return y*calcUTau(mag(Uw.snGrad()))/nuw;

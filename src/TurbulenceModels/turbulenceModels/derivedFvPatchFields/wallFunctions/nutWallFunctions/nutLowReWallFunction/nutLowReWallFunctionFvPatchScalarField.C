@@ -106,7 +106,8 @@ Foam::tmp<Foam::scalarField> Foam::nutLowReWallFunctionFvPatchScalarField::
 yPlus() const
 {
     const label patchi = patch().index();
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -114,9 +115,12 @@ yPlus() const
             internalField().group()
         )
     );
+
     const scalarField& y = turbModel.y()[patchi];
-    const tmp<scalarField> tnuw = turbModel.nu(patchi);
+
+    tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
+
     const fvPatchVectorField& Uw = U(turbModel).boundaryField()[patchi];
 
     return y*sqrt(nuw*mag(Uw.snGrad()))/nuw;

@@ -51,8 +51,8 @@ tmp<scalarField> nutkFilmWallFunctionFvPatchScalarField::calcUTau
     const scalarField& magGradU
 ) const
 {
-    tmp<scalarField> tuTau(new scalarField(patch().size(), Zero));
-    scalarField& uTau = tuTau.ref();
+    auto tuTau = tmp<scalarField>::New(patch().size(), Zero);
+    auto& uTau = tuTau.ref();
 
     const auto* filmModelPtr = db().time().findObject
         <regionModels::surfaceFilmModels::surfaceFilmRegionModel>
@@ -71,13 +71,13 @@ tmp<scalarField> nutkFilmWallFunctionFvPatchScalarField::calcUTau
 
     const label filmPatchi = filmModel.regionPatchID(patchi);
 
-    tmp<volScalarField> mDotFilm(filmModel.primaryMassTrans());
+    tmp<volScalarField> mDotFilm = filmModel.primaryMassTrans();
     scalarField mDotFilmp = mDotFilm().boundaryField()[filmPatchi];
     filmModel.toPrimary(filmPatchi, mDotFilmp);
 
 
     // Retrieve RAS turbulence model
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -87,22 +87,24 @@ tmp<scalarField> nutkFilmWallFunctionFvPatchScalarField::calcUTau
     );
 
     const scalarField& y = turbModel.y()[patchi];
-    const tmp<volScalarField> tk = turbModel.k();
+
+    tmp<volScalarField> tk = turbModel.k();
     const volScalarField& k = tk();
-    const tmp<scalarField> tnuw = turbModel.nu(patchi);
+
+    tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
 
-    const scalar Cmu25 = pow(Cmu_, 0.25);
+    const scalar Cmu25 = pow025(Cmu_);
 
     forAll(uTau, facei)
     {
-        label faceCelli = patch().faceCells()[facei];
+        const label faceCelli = patch().faceCells()[facei];
 
-        scalar ut = Cmu25*sqrt(k[faceCelli]);
+        const scalar ut = Cmu25*sqrt(k[faceCelli]);
 
-        scalar yPlus = y[facei]*ut/nuw[facei];
+        const scalar yPlus = y[facei]*ut/nuw[facei];
 
-        scalar mStar = mDotFilmp[facei]/(y[facei]*ut);
+        const scalar mStar = mDotFilmp[facei]/(y[facei]*ut);
 
         scalar factor = 0.0;
         if (yPlus > yPlusCrit_)
@@ -128,7 +130,7 @@ tmp<scalarField> nutkFilmWallFunctionFvPatchScalarField::calcNut() const
 {
     const label patchi = patch().index();
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -139,7 +141,8 @@ tmp<scalarField> nutkFilmWallFunctionFvPatchScalarField::calcNut() const
 
     const fvPatchVectorField& Uw = turbModel.U().boundaryField()[patchi];
     const scalarField magGradU(mag(Uw.snGrad()));
-    const tmp<scalarField> tnuw = turbModel.nu(patchi);
+
+    tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
 
     return max
@@ -244,7 +247,7 @@ tmp<scalarField> nutkFilmWallFunctionFvPatchScalarField::yPlus() const
 {
     const label patchi = patch().index();
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -254,8 +257,10 @@ tmp<scalarField> nutkFilmWallFunctionFvPatchScalarField::yPlus() const
     );
 
     const scalarField& y = turbModel.y()[patchi];
+
     const fvPatchVectorField& Uw = turbModel.U().boundaryField()[patchi];
-    const tmp<scalarField> tnuw = turbModel.nu(patchi);
+
+    tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
 
     return y*calcUTau(mag(Uw.snGrad()))/nuw;

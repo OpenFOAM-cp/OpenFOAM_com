@@ -44,7 +44,7 @@ void Foam::omegaWallFunctionFvPatchScalarField::setMaster()
         return;
     }
 
-    const volScalarField& omega =
+    const auto& omega =
         static_cast<const volScalarField&>(this->internalField());
 
     const volScalarField::Boundary& bf = omega.boundaryField();
@@ -69,7 +69,7 @@ void Foam::omegaWallFunctionFvPatchScalarField::setMaster()
 
 void Foam::omegaWallFunctionFvPatchScalarField::createAveragingWeights()
 {
-    const volScalarField& omega =
+    const auto& omega =
         static_cast<const volScalarField&>(this->internalField());
 
     const volScalarField::Boundary& bf = omega.boundaryField();
@@ -93,7 +93,7 @@ void Foam::omegaWallFunctionFvPatchScalarField::createAveragingWeights()
             false // do not register
         ),
         mesh,
-        dimensionedScalar(dimless, Zero)
+        dimensionedScalar(dimless)
     );
 
     DynamicList<label> omegaPatches(bf.size());
@@ -131,12 +131,12 @@ Foam::omegaWallFunctionFvPatchScalarField::omegaPatch
     const label patchi
 )
 {
-    const volScalarField& omega =
+    const auto& omega =
         static_cast<const volScalarField&>(this->internalField());
 
     const volScalarField::Boundary& bf = omega.boundaryField();
 
-    const omegaWallFunctionFvPatchScalarField& opf =
+    const auto& opf =
         refCast<const omegaWallFunctionFvPatchScalarField>(bf[patchi]);
 
     return const_cast<omegaWallFunctionFvPatchScalarField&>(opf);
@@ -189,13 +189,13 @@ void Foam::omegaWallFunctionFvPatchScalarField::calculate
 
     const scalarField& y = turbModel.y()[patchi];
 
-    const tmp<scalarField> tnuw = turbModel.nu(patchi);
+    tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
 
     tmp<scalarField> tnutw = turbModel.nut(patchi);
     const scalarField& nutw = tnutw();
 
-    const tmp<volScalarField> tk = turbModel.k();
+    tmp<volScalarField> tk = turbModel.k();
     const volScalarField& k = tk();
 
     const fvPatchVectorField& Uw = turbModel.U().boundaryField()[patchi];
@@ -473,7 +473,7 @@ void Foam::omegaWallFunctionFvPatchScalarField::updateCoeffs()
         return;
     }
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -521,7 +521,7 @@ void Foam::omegaWallFunctionFvPatchScalarField::updateWeightedCoeffs
         return;
     }
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (

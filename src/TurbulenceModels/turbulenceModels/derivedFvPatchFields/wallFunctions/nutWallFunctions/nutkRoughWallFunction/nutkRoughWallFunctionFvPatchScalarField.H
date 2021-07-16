@@ -184,22 +184,22 @@ public:
 
     // Member Functions
 
-        // Access functions
+        // Access
 
             // Return Ks
-            scalarField& Ks()
+            scalarField& Ks() noexcept
             {
                 return Ks_;
             }
 
             // Return Cs
-            scalarField& Cs()
+            scalarField& Cs() noexcept
             {
                 return Cs_;
             }
 
 
-        // Mapping functions
+        // Mapping
 
             //- Map (and resize as needed) from self given a mapping object
             virtual void autoMap(const fvPatchFieldMapper&);

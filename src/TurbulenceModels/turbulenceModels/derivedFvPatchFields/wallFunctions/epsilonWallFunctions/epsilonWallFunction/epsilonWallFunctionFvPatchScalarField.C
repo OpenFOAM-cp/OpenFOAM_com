@@ -44,7 +44,7 @@ void Foam::epsilonWallFunctionFvPatchScalarField::setMaster()
         return;
     }
 
-    const volScalarField& epsilon =
+    const auto& epsilon =
         static_cast<const volScalarField&>(this->internalField());
 
     const volScalarField::Boundary& bf = epsilon.boundaryField();
@@ -69,7 +69,7 @@ void Foam::epsilonWallFunctionFvPatchScalarField::setMaster()
 
 void Foam::epsilonWallFunctionFvPatchScalarField::createAveragingWeights()
 {
-    const volScalarField& epsilon =
+    const auto& epsilon =
         static_cast<const volScalarField&>(this->internalField());
 
     const volScalarField::Boundary& bf = epsilon.boundaryField();
@@ -93,7 +93,7 @@ void Foam::epsilonWallFunctionFvPatchScalarField::createAveragingWeights()
             false // do not register
         ),
         mesh,
-        dimensionedScalar(dimless, Zero)
+        dimensionedScalar(dimless)
     );
 
     DynamicList<label> epsilonPatches(bf.size());
@@ -132,12 +132,12 @@ Foam::epsilonWallFunctionFvPatchScalarField::epsilonPatch
     const label patchi
 )
 {
-    const volScalarField& epsilon =
+    const auto& epsilon =
         static_cast<const volScalarField&>(this->internalField());
 
     const volScalarField::Boundary& bf = epsilon.boundaryField();
 
-    const epsilonWallFunctionFvPatchScalarField& epf =
+    const auto& epf =
         refCast<const epsilonWallFunctionFvPatchScalarField>(bf[patchi]);
 
     return const_cast<epsilonWallFunctionFvPatchScalarField&>(epf);
@@ -190,13 +190,13 @@ void Foam::epsilonWallFunctionFvPatchScalarField::calculate
 
     const scalarField& y = turbModel.y()[patchi];
 
-    const tmp<scalarField> tnuw = turbModel.nu(patchi);
+    tmp<scalarField> tnuw = turbModel.nu(patchi);
     const scalarField& nuw = tnuw();
 
     tmp<scalarField> tnutw = turbModel.nut(patchi);
     const scalarField& nutw = tnutw();
 
-    const tmp<volScalarField> tk = turbModel.k();
+    tmp<volScalarField> tk = turbModel.k();
     const volScalarField& k = tk();
 
     const fvPatchVectorField& Uw = turbModel.U().boundaryField()[patchi];
@@ -283,14 +283,17 @@ void Foam::epsilonWallFunctionFvPatchScalarField::calculate
 
         epsilon0[celli] += epsilonBlended;
 
-        if (!(lowReCorrection_ && yPlus < yPlusLam_))
+        if (!lowReCorrection_)
         {
-            G0[celli] +=
-                w
-               *(nutw[facei] + nuw[facei])
-               *magGradUw[facei]
-               *Cmu25*sqrt(k[celli])
-               /(kappa_*y[facei]);
+            if (yPlus > yPlusLam_)
+            {
+                G0[celli] +=
+                    w
+                   *(nutw[facei] + nuw[facei])
+                   *magGradUw[facei]
+                   *Cmu25*sqrt(k[celli])
+                   /(kappa_*y[facei]);
+            }
         }
     }
 }
@@ -450,7 +453,7 @@ void Foam::epsilonWallFunctionFvPatchScalarField::updateCoeffs()
         return;
     }
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
@@ -498,7 +501,7 @@ void Foam::epsilonWallFunctionFvPatchScalarField::updateWeightedCoeffs
         return;
     }
 
-    const turbulenceModel& turbModel = db().lookupObject<turbulenceModel>
+    const auto& turbModel = db().lookupObject<turbulenceModel>
     (
         IOobject::groupName
         (
