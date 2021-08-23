@@ -213,16 +213,13 @@ void Foam::epsilonWallFunctionFvPatchScalarField::calculate
 
         const scalar yPlus = Cmu25*y[facei]*sqrt(k[celli])/nuw[facei];
 
-        const scalar w = cornerWeights[facei];
-
         scalar epsilonBlended = 0.0;
 
         // Contribution from the viscous sublayer
-        const scalar epsilonVis = w*2.0*k[celli]*nuw[facei]/sqr(y[facei]);
+        const scalar epsilonVis = 2.0*k[celli]*nuw[facei]/sqr(y[facei]);
 
         // Contribution from the inertial sublayer
-        const scalar epsilonLog =
-            w*Cmu75*pow(k[celli], 1.5)/(kappa_*y[facei]);
+        const scalar epsilonLog = Cmu75*pow(k[celli], 1.5)/(kappa_*y[facei]);
 
         switch (blending_)
         {
@@ -263,6 +260,7 @@ void Foam::epsilonWallFunctionFvPatchScalarField::calculate
                 // (PH:p. 193)
                 const scalar Gamma = 0.001*pow4(yPlus)/(1.0 + yPlus);
                 const scalar invGamma = 1.0/(Gamma + ROOTVSMALL);
+
                 epsilonBlended =
                     epsilonVis*exp(-Gamma) + epsilonLog*exp(-invGamma);
                 break;
@@ -281,7 +279,9 @@ void Foam::epsilonWallFunctionFvPatchScalarField::calculate
             }
         }
 
-        epsilon0[celli] += epsilonBlended;
+        const scalar w = cornerWeights[facei];
+
+        epsilon0[celli] += w*epsilonBlended;
 
         if (!lowReCorrection_)
         {

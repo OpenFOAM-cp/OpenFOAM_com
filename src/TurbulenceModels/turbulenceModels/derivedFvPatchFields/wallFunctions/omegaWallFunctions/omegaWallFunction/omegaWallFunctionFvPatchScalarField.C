@@ -208,8 +208,10 @@ void Foam::omegaWallFunctionFvPatchScalarField::calculate
     forAll(nutw, facei)
     {
         const label celli = patch.faceCells()[facei];
+
         const scalar yPlus = Cmu25*y[facei]*sqrt(k[celli])/nuw[facei];
-        const scalar w = cornerWeights[facei];
+
+        scalar omegaBlended = 0.0;
 
         // Contribution from the viscous sublayer
         const scalar omegaVis = 6.0*nuw[facei]/(beta1_*sqr(y[facei]));
@@ -223,11 +225,11 @@ void Foam::omegaWallFunctionFvPatchScalarField::calculate
             {
                 if (yPlus > yPlusLam_)
                 {
-                    omega0[celli] += w*omegaLog;
+                    omegaBlended = omegaLog;
                 }
                 else
                 {
-                    omega0[celli] += w*omegaVis;
+                    omegaBlended = omegaVis;
                 }
                 break;
             }
@@ -235,15 +237,15 @@ void Foam::omegaWallFunctionFvPatchScalarField::calculate
             case blendingType::MAX:
             {
                 // (PH:Eq. 27)
-                omega0[celli] += max(omegaVis, omegaLog);
+                omegaBlended = max(omegaVis, omegaLog);
                 break;
             }
 
             case blendingType::BINOMIAL:
             {
                 // (ME:Eq. 15)
-                omega0[celli] +=
-                    w*pow
+                omegaBlended =
+                    pow
                     (
                         pow(omegaVis, n_) + pow(omegaLog, n_),
                         1.0/n_
@@ -257,8 +259,7 @@ void Foam::omegaWallFunctionFvPatchScalarField::calculate
                 const scalar Gamma = 0.01*pow4(yPlus)/(1.0 + 5.0*yPlus);
                 const scalar invGamma = 1.0/(Gamma + ROOTVSMALL);
 
-                omega0[celli] +=
-                    w*(omegaVis*exp(-Gamma) + omegaLog*exp(-invGamma));
+                omegaBlended = omegaVis*exp(-Gamma) + omegaLog*exp(-invGamma);
                 break;
             }
 
@@ -270,10 +271,14 @@ void Foam::omegaWallFunctionFvPatchScalarField::calculate
                 const scalar omegab2 =
                     pow(pow(omegaVis, 1.2) + pow(omegaLog, 1.2), 1.0/1.2);
 
-                omega0[celli] += phiTanh*omegab1 + (1.0 - phiTanh)*omegab2;
+                omegaBlended = phiTanh*omegab1 + (1.0 - phiTanh)*omegab2;
                 break;
             }
         }
+
+        const scalar w = cornerWeights[facei];
+
+        omega0[celli] = w*omegaBlended;
 
         if (!(blending_ == blendingType::STEPWISE) || yPlus > yPlusLam_)
         {
