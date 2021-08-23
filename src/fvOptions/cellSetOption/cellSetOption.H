@@ -130,6 +130,8 @@ public:
             smCellSet,
             smCellZone,
             smPoints
+            smAll,
+            smCellType
         };
 
         //- List of selection mode type names
