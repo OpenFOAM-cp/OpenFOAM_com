@@ -1238,216 +1238,6 @@ void Foam::cellCellStencils::inverseDistance::findHoles
 }
 
 
-void Foam::cellCellStencils::inverseDistance::seedCell
-(
-    const label cellI,
-    const scalar wantedFraction,
-    bitSet& isFront,
-    scalarField& fraction
-) const
-{
-    const cell& cFaces = mesh_.cells()[cellI];
-    forAll(cFaces, i)
-    {
-        label nbrFacei = cFaces[i];
-        if (fraction[nbrFacei] < wantedFraction)
-        {
-            fraction[nbrFacei] = wantedFraction;
-            isFront.set(nbrFacei);
-        }
-    }
-}
-
-
-void Foam::cellCellStencils::inverseDistance::walkFront
-(
-    const scalar layerRelax,
-    const labelListList& allStencil,
-    labelList& allCellTypes,
-    scalarField& allWeight,
-    const labelList& zoneID
-) const
-{
-    // Current front
-    bitSet isFront(mesh_.nFaces());
-
-    const fvBoundaryMesh& fvm = mesh_.boundary();
-
-
-    // 'overset' patches
-    forAll(fvm, patchI)
-    {
-        if (isA<oversetFvPatch>(fvm[patchI]))
-        {
-            const labelList& fc = fvm[patchI].faceCells();
-            forAll(fc, i)
-            {
-                label cellI = fc[i];
-                if (allCellTypes[cellI] == INTERPOLATED)
-                {
-                    // Note that acceptors might have been marked hole if
-                    // there are no donors in which case we do not want to
-                    // walk this out. This is an extreme situation.
-                    isFront.set(fvm[patchI].start()+i);
-                }
-            }
-        }
-    }
-
-
-    // Outside of 'hole' region
-    {
-        const labelList& own = mesh_.faceOwner();
-        const labelList& nei = mesh_.faceNeighbour();
-
-        for (label faceI = 0; faceI < mesh_.nInternalFaces(); faceI++)
-        {
-            label ownType = allCellTypes[own[faceI]];
-            label neiType = allCellTypes[nei[faceI]];
-            if
-            (
-                 ((ownType == HOLE && neiType != HOLE)
-              || (ownType != HOLE && neiType == HOLE))
-             // && (zoneID[own[faceI]] == 0 && zoneID[nei[faceI]] == 0)
-            )
-            {
-                //Pout<< "Front at face:" << faceI
-                //    << " at:" << mesh_.faceCentres()[faceI] << endl;
-                isFront.set(faceI);
-            }
-        }
-
-        labelList nbrCellTypes;
-        syncTools::swapBoundaryCellList(mesh_, allCellTypes, nbrCellTypes);
-
-        for
-        (
-            label faceI = mesh_.nInternalFaces();
-            faceI < mesh_.nFaces();
-            faceI++
-        )
-        {
-            label ownType = allCellTypes[own[faceI]];
-            label neiType = nbrCellTypes[faceI-mesh_.nInternalFaces()];
-
-            if
-            (
-                 ((ownType == HOLE && neiType != HOLE)
-              || (ownType != HOLE && neiType == HOLE))
-             // && (zoneID[own[faceI]] == 0 && zoneID[nei[faceI]] == 0)
-            )
-            {
-                //Pout<< "Front at coupled face:" << faceI
-                //    << " at:" << mesh_.faceCentres()[faceI] << endl;
-                isFront.set(faceI);
-            }
-        }
-    }
-
-
-    // Current interpolation fraction
-    scalarField fraction(mesh_.nFaces(), Zero);
-
-    forAll(isFront, faceI)
-    {
-        if (isFront.test(faceI))
-        {
-            fraction[faceI] = 1.0;
-        }
-    }
-
-
-    while (returnReduce(isFront.any(), orOp<bool>()))
-    {
-        // Interpolate cells on front
-        bitSet newIsFront(mesh_.nFaces());
-        scalarField newFraction(fraction);
-        forAll(isFront, faceI)
-        {
-            if (isFront.test(faceI))
-            {
-                label own = mesh_.faceOwner()[faceI];
-                if (allCellTypes[own] != HOLE)
-                {
-                    if (allWeight[own] < fraction[faceI])
-                    {
-                        // Cell wants to become interpolated (if sufficient
-                        // stencil, otherwise becomes hole)
-                        if (allStencil[own].size())
-                        {
-                            allWeight[own] = fraction[faceI];
-                            allCellTypes[own] = INTERPOLATED;
-                            // Add faces of cell (with lower weight) as new
-                            // front
-                            seedCell
-                            (
-                                own,
-                                fraction[faceI]-layerRelax,
-                                newIsFront,
-                                newFraction
-                            );
-                        }
-                        else
-                        {
-                            allWeight[own] = 0.0;
-                            allCellTypes[own] = HOLE;
-                            // Add faces of cell as new front
-                            seedCell
-                            (
-                                own,
-                                1.0,
-                                newIsFront,
-                                newFraction
-                            );
-                        }
-                    }
-                }
-                if (mesh_.isInternalFace(faceI))
-                {
-                    label nei = mesh_.faceNeighbour()[faceI];
-                    if (allCellTypes[nei] != HOLE)
-                    {
-                        if (allWeight[nei] < fraction[faceI])
-                        {
-                            if (allStencil[nei].size())
-                            {
-                                allWeight[nei] = fraction[faceI];
-                                allCellTypes[nei] = INTERPOLATED;
-                                seedCell
-                                (
-                                    nei,
-                                    fraction[faceI]-layerRelax,
-                                    newIsFront,
-                                    newFraction
-                                );
-                            }
-                            else
-                            {
-                                allWeight[nei] = 0.0;
-                                allCellTypes[nei] = HOLE;
-                                seedCell
-                                (
-                                    nei,
-                                    1.0,
-                                    newIsFront,
-                                    newFraction
-                                );
-                            }
-                        }
-                    }
-                }
-            }
-        }
-
-        syncTools::syncFaceList(mesh_, newIsFront, orEqOp<unsigned int>());
-        syncTools::syncFaceList(mesh_, newFraction, maxEqOp<scalar>());
-
-        isFront.transfer(newIsFront);
-        fraction.transfer(newFraction);
-    }
-}
-
-
 void Foam::cellCellStencils::inverseDistance::stencilWeights
 (
     const point& sample,
@@ -2064,7 +1854,7 @@ Foam::cellCellStencils::inverseDistance::~inverseDistance()
 
 bool Foam::cellCellStencils::inverseDistance::update()
 {
-    scalar layerRelax(dict_.getOrDefault("layerRelax", 1.0));
+    label layerRelax(dict_.getOrDefault("layerRelax", 1));
 
     scalar tol = dict_.getOrDefault("tolerance", 1e-10);
     smallVec_ = mesh_.bounds().span()*tol;
@@ -2410,6 +2200,80 @@ bool Foam::cellCellStencils::inverseDistance::update()
         }
     }
 
+//     // Check previous iteration cellTypes_ for any hole->calculated changes
+//     // If so set the cell either to interpolated (if there are donors) or
+//     // holes (if there are no donors). Note that any interpolated cell might
+//     // still be overwritten by the flood filling
+//     {
+//         label nCalculated = 0;
+//
+//         forAll(cellTypes_, celli)
+//         {
+//             if (allCellTypes[celli] == CALCULATED && cellTypes_[celli] == HOLE)
+//             {
+//                 if (allStencil[celli].size() == 0)
+//                 {
+//                     // Reset to hole
+//                     allCellTypes[celli] = HOLE;
+//                     allStencil[celli].clear();
+//                 }
+//                 else
+//                 {
+//                     allCellTypes[celli] = INTERPOLATED;
+//                     nCalculated++;
+//                 }
+//             }
+//         }
+//
+//         if (debug)
+//         {
+//             Pout<< "Detected " << nCalculated << " cells changing from hole"
+//                 << " to calculated. Changed to interpolated"
+//                 << endl;
+//         }
+//     }
+
+    if ((debug&2) && (mesh_.time().outputTime()))
+    {
+        tmp<volScalarField> tfld
+        (
+            createField(mesh_, "allCellTypes_pre_front", allCellTypes)
+        );
+        tfld().write();
+    }
+    // Add buffer interpolation layer(s) around holes
+    scalarField allWeight(mesh_.nCells(), Zero);
+
+    labelListList compactStencil(allStencil);
+    List<Map<label>> compactStencilMap;
+    mapDistribute map(globalCells, compactStencil, compactStencilMap);
+
+    scalarList compactCellVol(mesh_.V());
+    map.distribute(compactCellVol);
+
+    walkFront
+    (
+        globalCells,
+        layerRelax,
+        allStencil,
+        allCellTypes,
+        allWeight,
+        compactCellVol,
+        compactStencil,
+        zoneID,
+        dict_.getOrDefault("holeLayers", 1),
+        dict_.getOrDefault("useLayer", -1)
+    );
+
+    if ((debug&2) && (mesh_.time().outputTime()))
+    {
+        tmp<volScalarField> tfld
+        (
+            createField(mesh_, "allCellTypes_front", allCellTypes)
+        );
+        tfld().write();
+    }
+
     // Check previous iteration cellTypes_ for any hole->calculated changes
     // If so set the cell either to interpolated (if there are donors) or
     // holes (if there are no donors). Note that any interpolated cell might
@@ -2443,19 +2307,8 @@ bool Foam::cellCellStencils::inverseDistance::update()
         }
     }
 
-    // Add buffer interpolation layer(s) around holes
-    scalarField allWeight(mesh_.nCells(), Zero);
-    walkFront(layerRelax, allStencil, allCellTypes, allWeight, zoneID);
 
 
-    if ((debug&2) && (mesh_.time().outputTime()))
-    {
-        tmp<volScalarField> tfld
-        (
-            createField(mesh_, "allCellTypes_front", allCellTypes)
-        );
-        tfld().write();
-    }
 
     // Convert cell-cell addressing to stencil in compact notation
     // Clean any potential INTERPOLATED with HOLE donors.
@@ -2492,14 +2345,14 @@ bool Foam::cellCellStencils::inverseDistance::update()
     }
 */
 
-    labelListList compactStencil(allStencil);
-    List<Map<label>> compactStencilMap;
-    mapDistribute map(globalCells, compactStencil, compactStencilMap);
+    //labelListList compactStencil(allStencil);
+    //List<Map<label>> compactStencilMap;
+    //mapDistribute map(globalCells, compactStencil, compactStencilMap);
 
     labelList compactCellTypes(cellTypes_);
     map.distribute(compactCellTypes);
 
-    label nHoleDonors = 0;
+    label nInterpolatedDonors = 0;
     forAll(cellTypes_, celli)
     {
         if (cellTypes_[celli] == INTERPOLATED)
@@ -2520,7 +2373,7 @@ bool Foam::cellCellStencils::inverseDistance::update()
                     cellTypes_[celli] = POROUS;
                     cellStencil_[celli].clear();
                     cellInterpolationWeights_[celli].clear();
-                    nHoleDonors++;
+                    nInterpolatedDonors++;
                 }
                 else
                 {
@@ -2538,9 +2391,11 @@ bool Foam::cellCellStencils::inverseDistance::update()
         }
     }
 
-    reduce(nHoleDonors, sumOp<label>());
+    reduce(nInterpolatedDonors, sumOp<label>());
 
-    DebugInfo<< FUNCTION_NAME << "nHole Donors : " << nHoleDonors << endl;
+    DebugInfo<< FUNCTION_NAME
+             << "interpolate Donors : "
+             << nInterpolatedDonors << endl;
 
     // Reset map with new cellStencil
     List<Map<label>> compactMap;

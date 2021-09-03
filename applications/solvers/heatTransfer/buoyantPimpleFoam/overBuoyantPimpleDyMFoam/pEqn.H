@@ -21,6 +21,13 @@ surfaceScalarField phiHbyA
     fvc::flux(rho*HbyA) + phig
 );
 
+if (adjustFringe)
+{
+    fvc::makeRelative(phiHbyA,rho, U);
+    oversetAdjustPhi(phiHbyA, U);
+    fvc::makeAbsolute(phiHbyA,rho, U);
+}
+
 
 MRF.makeRelative(fvc::interpolate(rho), phiHbyA);
 

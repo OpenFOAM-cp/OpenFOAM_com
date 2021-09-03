@@ -50,6 +50,7 @@ Description
 #include "CorrectPhi.H"
 #include "cellCellStencilObject.H"
 #include "localMin.H"
+#include "oversetAdjustPhi.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

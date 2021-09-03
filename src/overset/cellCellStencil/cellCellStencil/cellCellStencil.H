@@ -75,8 +75,8 @@ public:
         CALCULATED = 0,     // normal operation
         INTERPOLATED = 1,   // interpolated
         HOLE = 2,           // hole
-        SPECIAL = 3,         // hole that changes
-        POROUS = 4
+        SPECIAL = 3,        // hole that is donor
+        POROUS = 4          // tag for special treatment due to lack of donors
     };
 
 
@@ -93,9 +93,11 @@ protected:
         //- Set of fields that should not be interpolated
         wordHashSet nonInterpolatedFields_;
 
+        //- Dictionary of motion control parameters
+        const dictionary dict_;
+
 
     // Protected Member Functions
-
 
         //- Helper: create volScalarField for postprocessing.
         template<class Type>
@@ -269,6 +271,47 @@ public:
         {
             return *this;
         }
+
+        //- Surround holes with layer(s) of interpolated cells
+        void walkFront
+        (
+            const globalIndex& globalCells,
+            const label layerRelax,
+            const labelListList& allStencil,
+            labelList& allCellTypes,
+            scalarField& allWeight,
+            const scalarList& compactCellVol,
+            const labelListList& compactStencil,
+            const labelList& zoneID,
+            const label holeLayers,
+            const label useLayer
+        ) const;
+
+
+         //- Set up front using allCellTypes
+        void setUpFront
+        (
+            const labelList& allCellTypes,
+            bitSet& isFront
+
+        ) const;
+
+        //- Set up front on overset patches
+        void setUpFrontOnOversetPatch
+        (
+            const labelList& allCellTypes,
+            bitSet& isFront
+        ) const;
+
+        //- Seed faces of cell with wantedFraction (if higher than current)
+        void seedCell
+        (
+            const label cellI,
+            const scalar wantedFraction,
+            bitSet& isFront,
+            scalarField& fraction
+        ) const;
+
 };
 
 template<>

@@ -6,25 +6,12 @@ volVectorField H("H", UEqn.H());
 volVectorField HbyA("HbyA", U);
 HbyA = constrainHbyA(rAU*H, U, p);
 
-if (runTime.outputTime())
-{
-    H.write();
-    rAU.write();
-    HbyA.write();
-}
-
 if (pimple.nCorrPISO() <= 1)
 {
     tUEqn.clear();
 }
 
 phiHbyA = fvc::flux(HbyA);
-
-if (runTime.outputTime())
-{
-    volScalarField divPhiHbyA("divPhiHbyA", fvc::div(phiHbyA));
-    divPhiHbyA.write();
-}
 
 MRF.makeRelative(phiHbyA);
 
@@ -72,15 +59,6 @@ while (pimple.correctNonOrthogonal())
 
 // Excludes error in interpolated/hole cells
 #include "continuityErrs.H"
-
-if (runTime.outputTime())
-{
-    volVectorField Ucorrected("Ucorrected", U);
-    Ucorrected.write();
-
-    volScalarField divPhiCon("divPhiCon", fvc::div(phi));
-    divPhiCon.write();
-}
 
 {
     Uf = fvc::interpolate(U);

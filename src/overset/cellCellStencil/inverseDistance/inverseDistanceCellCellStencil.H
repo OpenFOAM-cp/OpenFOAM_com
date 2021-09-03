@@ -103,6 +103,13 @@ protected:
         //- Amount of interpolation
         volScalarField cellInterpolationWeight_;
 
+        //- Data for a set of interpolated/donor set
+        struct interpolatedDonorSet
+        {
+            scalar averVolRatio;
+            labelList cellTypes;
+        };
+
 
    // Protected Member Functions
 
@@ -250,16 +257,6 @@ protected:
             const scalar wantedFraction,
             bitSet& isFront,
             scalarField& fraction
-        ) const;
-
-        //- Surround holes with layer(s) of interpolated cells
-        void walkFront
-        (
-            const scalar layerRelax,
-            const labelListList& allStencil,
-            labelList& allCellTypes,
-            scalarField& allWeight,
-            const labelList& zoneID
         ) const;
 
         //- Create stencil starting from the donor containing the acceptor

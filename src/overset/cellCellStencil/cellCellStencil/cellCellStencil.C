@@ -30,6 +30,7 @@ License
 #include "volFields.H"
 #include "syncTools.H"
 #include "globalIndex.H"
+#include "oversetFvPatchFields.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -306,6 +307,427 @@ void Foam::cellCellStencil::globalCellCells
         stencil.setSize(compacti);
         stencilPoints.setSize(compacti);
     }
+}
+
+void Foam::cellCellStencil::seedCell
+(
+    const label cellI,
+    const scalar wantedFraction,
+    bitSet& isFront,
+    scalarField& fraction
+) const
+{
+    const cell& cFaces = mesh_.cells()[cellI];
+    forAll(cFaces, i)
+    {
+        label nbrFacei = cFaces[i];
+        if (fraction[nbrFacei] < wantedFraction)
+        {
+            fraction[nbrFacei] = wantedFraction;
+            isFront.set(nbrFacei);
+        }
+    }
+}
+
+
+void Foam::cellCellStencil::setUpFront
+(
+    const labelList& allCellTypes,
+    bitSet& isFront
+) const
+{
+    const labelList& own = mesh_.faceOwner();
+    const labelList& nei = mesh_.faceNeighbour();
+
+    for (label faceI = 0; faceI < mesh_.nInternalFaces(); faceI++)
+    {
+        label ownType = allCellTypes[own[faceI]];
+        label neiType = allCellTypes[nei[faceI]];
+        if
+        (
+                ((ownType == HOLE && neiType != HOLE)
+            || (ownType != HOLE && neiType == HOLE))
+            // && (zoneID[own[faceI]] == 0 && zoneID[nei[faceI]] == 0)
+        )
+        {
+            //Pout<< "Front at face:" << faceI
+            //    << " at:" << mesh_.faceCentres()[faceI] << endl;
+            isFront.set(faceI);
+        }
+    }
+
+    labelList nbrCellTypes;
+    syncTools::swapBoundaryCellList(mesh_, allCellTypes, nbrCellTypes);
+
+    for
+    (
+        label faceI = mesh_.nInternalFaces();
+        faceI < mesh_.nFaces();
+        faceI++
+    )
+    {
+        label ownType = allCellTypes[own[faceI]];
+        label neiType = nbrCellTypes[faceI-mesh_.nInternalFaces()];
+
+        if
+        (
+                ((ownType == HOLE && neiType != HOLE)
+            || (ownType != HOLE && neiType == HOLE))
+            // && (zoneID[own[faceI]] == 0 && zoneID[nei[faceI]] == 0)
+        )
+        {
+            //Pout<< "Front at coupled face:" << faceI
+            //    << " at:" << mesh_.faceCentres()[faceI] << endl;
+            isFront.set(faceI);
+        }
+    }
+}
+
+
+void Foam::cellCellStencil::setUpFrontOnOversetPatch
+(
+    const labelList& allCellTypes,
+    bitSet& isFront
+) const
+{
+    const fvBoundaryMesh& fvm = mesh_.boundary();
+    // 'overset' patches
+    forAll(fvm, patchI)
+    {
+        if (isA<oversetFvPatch>(fvm[patchI]))
+        {
+            const labelList& fc = fvm[patchI].faceCells();
+            forAll(fc, i)
+            {
+                label cellI = fc[i];
+                if (allCellTypes[cellI] == INTERPOLATED)
+                {
+                    // Note that acceptors might have been marked hole if
+                    // there are no donors in which case we do not want to
+                    // walk this out. This is an extreme situation.
+                    isFront.set(fvm[patchI].start()+i);
+                }
+            }
+        }
+    }
+}
+
+void Foam::cellCellStencil::walkFront
+(
+    const globalIndex& globalCells,
+    const label layerRelax,
+    const labelListList& allStencil,
+    labelList& allCellTypes,
+    scalarField& allWeight,
+    const scalarList& compactCellVol,
+    const labelListList& compactStencil,
+    const labelList& zoneID,
+    const label holeLayers,
+    const label useLayer
+) const
+{
+    if (useLayer > holeLayers)
+    {
+        FatalErrorInFunction<< "useLayer: " << useLayer
+            << "is larger than : " <<  holeLayers
+            << abort(FatalError);
+    }
+
+    if (useLayer == 0)
+    {
+        FatalErrorInFunction<< "useLayer: " << useLayer
+            << " can not be zero."
+            << abort(FatalError);
+    }
+
+    // Current front
+    bitSet isFront(mesh_.nFaces());
+
+    // List of cellTYpes
+    DynamicList<labelList> dataSet;
+    // List of cellTypes for increasing layers
+    DynamicList<scalarField> dAlllWeight;
+    // List of average volumen ration interpolated/donor
+    DynamicList<scalar> daverageVolRatio;
+
+    // Counting holes of different layers
+    DynamicList<label> dHoles;
+
+    const scalarField& V = mesh_.V();
+
+    // Current layer
+    labelField nLayer(allCellTypes.size(), 0);
+
+    for (label currLayer=1; currLayer<holeLayers+1; currLayer++)
+    {
+        // Set up original front
+        isFront = false;
+
+        setUpFront(allCellTypes, isFront);
+
+        labelList allCellTypesWork(allCellTypes);
+
+        bitSet isFrontWork(isFront);
+        label nCurrLayer = currLayer;
+
+        while (nCurrLayer > 1 && returnReduce(isFrontWork.any(), orOp<bool>()))
+        {
+            bitSet newIsFront(mesh_.nFaces());
+            forAll(isFrontWork, faceI)
+            {
+                if (isFrontWork.test(faceI))
+                {
+                    label own = mesh_.faceOwner()[faceI];
+                    if (allCellTypesWork[own] != HOLE)
+                    {
+                        allCellTypesWork[own] = HOLE;
+                        newIsFront.set(mesh_.cells()[own]);
+                    }
+                    if (mesh_.isInternalFace(faceI))
+                    {
+                        label nei = mesh_.faceNeighbour()[faceI];
+                        if (allCellTypesWork[nei] != HOLE)
+                        {
+                            allCellTypesWork[nei] = HOLE;
+                            newIsFront.set(mesh_.cells()[nei]);
+                        }
+                    }
+                }
+            }
+            syncTools::syncFaceList(mesh_, newIsFront, orEqOp<unsigned int>());
+
+            isFrontWork.transfer(newIsFront);
+
+            nCurrLayer --;
+        }
+
+
+        if ((debug&2) && (mesh_.time().outputTime()))
+        {
+            tmp<volScalarField> tfld
+            (
+                createField
+                (
+                    mesh_,
+                    "allCellTypesWork_Holes" + name(currLayer),
+                    allCellTypesWork
+                )
+            );
+            tfld().write();
+        }
+
+        if (currLayer == 1)
+        {
+            setUpFrontOnOversetPatch(allCellTypes, isFront);
+        }
+
+        if (currLayer > 1)
+        {
+            isFront = false;
+            setUpFrontOnOversetPatch(allCellTypesWork, isFront);
+            setUpFront(allCellTypesWork, isFront);
+        }
+
+        // Current interpolation fraction
+        scalarField fraction(mesh_.nFaces(), Zero);
+
+        // Ratio between Inter/donor
+        scalarField volRatio(allCellTypes.size(), 0);
+
+        forAll(isFront, faceI)
+        {
+            if (isFront.test(faceI))
+            {
+                fraction[faceI] = 1.0;
+            }
+        }
+
+        scalarField allWeightWork(allCellTypes.size(), Zero);
+        bitSet nHoles(allCellTypes.size());
+
+        while (returnReduce(isFront.any(), orOp<bool>()))
+        {
+            // Interpolate cells on front
+            bitSet newIsFront(mesh_.nFaces());
+            scalarField newFraction(fraction);
+
+            forAll(isFront, faceI)
+            {
+                if (isFront.test(faceI))
+                {
+                    label own = mesh_.faceOwner()[faceI];
+                    if (allCellTypesWork[own] != HOLE)
+                    {
+                        if (allWeightWork[own] < fraction[faceI])
+                        {
+                            // Cell wants to become interpolated (if sufficient
+                            // stencil, otherwise becomes hole)
+                            if (allStencil[own].size())
+                            {
+                                nLayer[own] = currLayer;
+
+                                allWeightWork[own] = fraction[faceI];
+                                allCellTypesWork[own] = INTERPOLATED;
+
+                                label donorId = compactStencil[own][0];
+
+                                volRatio[own] = V[own]/compactCellVol[donorId];
+
+                                seedCell
+                                (
+                                    own,
+                                    fraction[faceI]-layerRelax,
+                                    newIsFront,
+                                    newFraction
+                                );
+
+                                nHoles[own] = true;
+                            }
+                            else
+                            {
+                                allWeightWork[own] = 0.0;
+                                allCellTypesWork[own] = HOLE;
+                                // Add faces of cell as new front
+                                seedCell
+                                (
+                                    own,
+                                    1.0,
+                                    newIsFront,
+                                    newFraction
+                                );
+                            }
+                        }
+                    }
+                    if (mesh_.isInternalFace(faceI))
+                    {
+                        label nei = mesh_.faceNeighbour()[faceI];
+                        if (allCellTypesWork[nei] != HOLE)
+                        {
+                            if (allWeightWork[nei] < fraction[faceI])
+                            {
+                                if (allStencil[nei].size())
+                                {
+                                    nLayer[nei] = currLayer;
+
+                                    allWeightWork[nei] = fraction[faceI];
+                                    allCellTypesWork[nei] = INTERPOLATED;
+
+                                    label donorId =  compactStencil[nei][0];
+
+                                    volRatio[nei] = V[nei]/compactCellVol[donorId];
+
+                                    seedCell
+                                    (
+                                        nei,
+                                        fraction[faceI]-layerRelax,
+                                        newIsFront,
+                                        newFraction
+                                    );
+                                }
+                                else
+                                {
+                                    allWeightWork[nei] = 0.0;
+                                    allCellTypesWork[nei] = HOLE;
+                                    nHoles[nei] = true;
+                                    seedCell
+                                    (
+                                        nei,
+                                        1.0,
+                                        newIsFront,
+                                        newFraction
+                                    );
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+
+            syncTools::syncFaceList(mesh_, newIsFront, orEqOp<unsigned int>());
+            syncTools::syncFaceList(mesh_, newFraction, maxEqOp<scalar>());
+
+            isFront.transfer(newIsFront);
+            fraction.transfer(newFraction);
+        }
+
+        if ((debug&2) && (mesh_.time().outputTime()))
+        {
+            tmp<volScalarField> tfld
+            (
+                createField
+                (
+                    mesh_,
+                    "allCellTypesWork_Layers" + name(currLayer),
+                    allCellTypesWork
+                )
+            );
+            tfld().write();
+        }
+
+        dAlllWeight.append(allWeightWork);
+        dataSet.append(allCellTypesWork);
+
+        // Counting interpolated cells
+        label count = 1;
+        forAll (volRatio, i)
+        {
+            if (volRatio[i] > 0)
+            {
+                count++;
+            }
+        }
+        label nCount(count);
+        reduce(nCount, sumOp<label>());
+
+        scalar aveVol = mag(gSum(volRatio));
+
+        daverageVolRatio.append(aveVol/nCount);
+
+        // Check holes number. A sudden increase occurs when the walk leaks
+        // out from the obstacle
+        label nTotalHoles(nHoles.count());
+        reduce(nTotalHoles, sumOp<label>());
+        dHoles.append(nTotalHoles);
+
+        // Check the increase between this layer and the last one
+        // if over 50% breaks the layer loop.
+        if
+        (
+            (currLayer > 1)
+          & (nTotalHoles > 2.0*dHoles[currLayer - 1])
+        )
+        {
+            break;
+        }
+    }
+
+
+    if ((debug&2) && (mesh_.time().outputTime()))
+    {
+        tmp<volScalarField> tfld
+        (
+            createField(mesh_, "walkFront_layers", nLayer)
+        );
+        tfld().write();
+    }
+
+    // Try to find the best averageVolRatio the further from the initial set
+    // As this one is next to HOLES
+    scalarList averageVolRatio;
+    averageVolRatio.transfer(daverageVolRatio);
+    label minVolId = findMin(averageVolRatio);
+
+    Info<< " Number layers : " << averageVolRatio.size() << nl
+        << " Average volumetric ratio : " << averageVolRatio << nl
+        << " Number of holes cells : " << dHoles << nl
+        << endl;
+
+    if (useLayer != -1)
+    {
+        minVolId = useLayer - 1;
+    }
+    allCellTypes.transfer(dataSet[minVolId]);
+    allWeight.transfer(dAlllWeight[minVolId]);
 }
 
 

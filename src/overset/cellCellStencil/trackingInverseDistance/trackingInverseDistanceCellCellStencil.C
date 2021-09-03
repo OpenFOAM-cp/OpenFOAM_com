@@ -587,6 +587,8 @@ bool Foam::cellCellStencils::trackingInverseDistance::update()
     const labelIOList& zoneID = this->zoneID();
     label nZones = meshParts_.size();
 
+    //label holeLayers(dict_.getOrDefault("holeLayers", 1));
+
     // Update stored mesh partitions for geometry changes
     forAll(meshParts_, zonei)
     {
@@ -936,17 +938,38 @@ bool Foam::cellCellStencils::trackingInverseDistance::update()
         }
     }
 
-    // Try to make calculated cells that are nrb with patches
-//     forAll(allPatchTypes, cellI)
-//     {
-//         if (allPatchTypes[cellI] == patchCellType::PATCH)
-//         {
-//             if (allCellTypes[cellI] == INTERPOLATED)
-//             {
-//                 allCellTypes[cellI] = CALCULATED;
-//             }
-//         }
-//     }
+    // Add buffer interpolation layer(s) around holes
+    scalarField allWeight(mesh_.nCells(), Zero);
+
+    labelListList compactStencil(allStencil);
+    List<Map<label>> compactStencilMap;
+    mapDistribute map(globalCells, compactStencil, compactStencilMap);
+
+    scalarList compactCellVol(mesh_.V());
+    map.distribute(compactCellVol);
+
+    walkFront
+    (
+        globalCells,
+        layerRelax,
+        allStencil,
+        allCellTypes,
+        allWeight,
+        compactCellVol,
+        compactStencil,
+        zoneID,
+        dict_.getOrDefault("holeLayers", 1),
+        dict_.getOrDefault("useLayer", -1)
+    );
+
+    if ((debug&2) && (mesh_.time().outputTime()))
+    {
+        tmp<volScalarField> tfld
+        (
+            createField(mesh_, "allCellTypes_front", allCellTypes)
+        );
+        tfld().write();
+    }
 
     // Check previous iteration cellTypes_ for any hole->calculated changes
     // If so set the cell either to interpolated (if there are donors) or
@@ -979,23 +1002,6 @@ bool Foam::cellCellStencils::trackingInverseDistance::update()
                 << " to calculated. Changed to interpolated"
                 << endl;
         }
-    }
-
-
-
-    // Add buffer interpolation layer(s) around holes
-    scalarField allWeight(mesh_.nCells(), Zero);
-    walkFront(layerRelax, allStencil, allCellTypes, allWeight, zoneID);
-    DebugInfo<< FUNCTION_NAME << " : Implemented layer relaxation" << endl;
-
-
-    if ((debug&2) && (mesh_.time().outputTime()))
-    {
-        tmp<volScalarField> tfld
-        (
-            createField(mesh_, "allCellTypes_front", allCellTypes)
-        );
-        tfld().write();
     }
 
 
@@ -1032,9 +1038,9 @@ bool Foam::cellCellStencils::trackingInverseDistance::update()
     }
     */
 
-    labelListList compactStencil(allStencil);
-    List<Map<label>> compactStencilMap;
-    mapDistribute map(globalCells, compactStencil, compactStencilMap);
+    //labelListList compactStencil(allStencil);
+    //List<Map<label>> compactStencilMap;
+    //mapDistribute map(globalCells, compactStencil, compactStencilMap);
 
     labelList compactCellTypes(cellTypes_);
     map.distribute(compactCellTypes);

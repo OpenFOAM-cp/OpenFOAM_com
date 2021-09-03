@@ -95,31 +95,6 @@ protected:
 
    // Protected Member Functions
 
-//         void walkFront
-//         (
-//             const scalar layerRelax,
-//             labelList& allCellTypes,
-//             scalarField& allWeight,
-//             const labelList& zoneID
-//         ) const;
-
-        //- Seed faces of cell with wantedFraction (if higher than current)
-        void seedCell
-        (
-            const label cellI,
-            const scalar wantedFraction,
-            bitSet& isFront,
-            scalarField& fraction
-        ) const;
-
-
-        void walkFront
-        (
-            const scalar layerRelax,
-            labelList& allCellTypes,
-            scalarField& allWeight,
-            const labelList& zoneID
-        ) const;
 
         //- Find cells next to cells of type PATCH
         void findHoles
