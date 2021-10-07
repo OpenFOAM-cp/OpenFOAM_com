@@ -5,8 +5,8 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2007-2019 PCOpt/NTUA
-    Copyright (C) 2013-2019 FOSS GP
+    Copyright (C) 2007-2021 PCOpt/NTUA
+    Copyright (C) 2013-2021 FOSS GP
     Copyright (C) 2019 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
@@ -57,7 +57,20 @@ ATCstandard::ATCstandard
     const dictionary& dict
 )
 :
-    ATCModel(mesh, primalVars, adjointVars, dict)
+    ATCModel(mesh, primalVars, adjointVars, dict),
+    gradU_
+    (
+        IOobject
+        (
+            "gradUATC",
+            mesh_.time().timeName(),
+            mesh_,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh_,
+        dimensionedTensor(dimless/dimTime, Zero)
+    )
 {}
 
 
@@ -65,23 +78,14 @@ ATCstandard::ATCstandard
 
 void ATCstandard::addATC(fvVectorMatrix& UaEqn)
 {
+    addProfiling(ATCstandard, "ATCstandard::addATC");
     const volVectorField& U = primalVars_.U();
     const volVectorField& Ua = adjointVars_.UaInst();
     const surfaceScalarField& phi = primalVars_.phi();
 
-    // Build U to go into the ATC term, based on whether to smooth field or not
-    autoPtr<volVectorField> UForATC(nullptr);
-    if (reconstructGradients_)
-    {
-        UForATC.reset(new volVectorField(fvc::reconstruct(phi)));
-    }
-    else
-    {
-        UForATC.reset(new volVectorField(U));
-    }
 
     // Main ATC term
-    ATC_ = (fvc::grad(UForATC(), "gradUATC") & Ua);
+    ATC_ = gradU_ & Ua;
 
     if (extraConvection_ > 0)
     {
@@ -97,7 +101,7 @@ void ATCstandard::addATC(fvVectorMatrix& UaEqn)
     smoothATC();
 
     // actual ATC term
-    UaEqn += fvm::Su(ATC_, Ua);
+    UaEqn += ATC_.internalField();
 }
 
 
@@ -146,6 +150,24 @@ tmp<volTensorField> ATCstandard::getFISensitivityTerm() const
     volSDTerm = -(gradU & Ua)*U*mask;
 
     return tvolSDTerm;
+}
+
+
+void ATCstandard::updatePrimalBasedQuantities()
+{
+    const volVectorField& U = primalVars_.U();
+    const surfaceScalarField& phi = primalVars_.phi();
+    // Build U to go into the ATC term, based on whether to smooth field or not
+    autoPtr<volVectorField> UForATC(nullptr);
+    if (reconstructGradients_)
+    {
+        UForATC.reset(new volVectorField(fvc::reconstruct(phi)));
+    }
+    else
+    {
+        UForATC.reset(new volVectorField(U));
+    }
+    gradU_ = fvc::grad(UForATC(), "gradUATC");
 }
 
 
