@@ -215,6 +215,7 @@ $(derivedFvPatchFields)/turbulentDFSEMInlet/turbulentDFSEMInletFvPatchVectorFiel
 $(derivedFvPatchFields)/turbulentDFSEMInlet/eddy/eddy.C
 $(derivedFvPatchFields)/turbulentDFSEMInlet/eddy/eddyIO.C
 $(derivedFvPatchFields)/turbulentDigitalFilterInlet/turbulentDigitalFilterInletFvPatchVectorField.C
+$(derivedFvPatchFields)/turbulentDigitalFilterInlet/randomNumberBox/randomNumberBox.C
 $(derivedFvPatchFields)/turbulentInlet/turbulentInletFvPatchFields.C
 $(derivedFvPatchFields)/turbulentIntensityKineticEnergyInlet/turbulentIntensityKineticEnergyInletFvPatchScalarField.C
 $(derivedFvPatchFields)/uniformDensityHydrostaticPressure/uniformDensityHydrostaticPressureFvPatchScalarField.C
