@@ -158,6 +158,37 @@ public:
         regIOobject(const IOobject& io, const regIOobject& rio);
 
 
+    // Selectors
+
+        //- Return reference or pointer to a new regIOobject from an IOobject.
+        //  \returns nullptr if no constructor found
+        static refPtr<regIOobject> New
+        (
+            const word& objectType,
+            const IOobject& io
+        );
+
+        //- Return reference or pointer to a new regIOobject from an IOobject.
+        //- Assumes IOobject contains header information.
+        //  \returns nullptr if no constructor found
+        static refPtr<regIOobject> New(const IOobject& io);
+
+
+    // Declare run-time constructor selection tables
+
+        declareRunTimeRefPtrSelectionTable
+        (
+            refPtr,
+            regIOobject,
+            IOobject,
+            (
+                const IOobject& io
+            ),
+            (io)
+        );
+
+
+
     //- Destructor
     virtual ~regIOobject();
 
