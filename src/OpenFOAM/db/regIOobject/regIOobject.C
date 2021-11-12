@@ -37,6 +37,8 @@ License
 namespace Foam
 {
     defineTypeNameAndDebug(regIOobject, 0);
+
+    defineRunTimeSelectionTable(regIOobject, IOobject);
 }
 
 bool Foam::regIOobject::masterOnlyReading = false;
@@ -451,6 +453,42 @@ bool Foam::regIOobject::headerOk()
     }
 
     return ok;
+}
+
+
+Foam::refPtr<Foam::regIOobject> Foam::regIOobject::New
+(
+    const word& objectType,
+    const IOobject& io
+)
+{
+    DebugInFunction << "Constructing regIOobject " << io.name()
+        << " of type " << objectType << endl;
+
+    auto cstrIter = IOobjectConstructorTablePtr_->cfind(objectType);
+
+    if (!cstrIter.found())
+    {
+        return nullptr;
+    }
+
+    return refPtr<regIOobject>(cstrIter()(io));
+}
+
+
+Foam::refPtr<Foam::regIOobject> Foam::regIOobject::New(const IOobject& io)
+{
+    DebugInFunction << "Constructing regIOobject" << endl;
+
+    if (io.headerClassName().empty())
+    {
+        //FatalIOErrorInFunction(io.objectPath())
+        //    << "No className in header for object "
+        //    << io.info() << exit(FatalIOError);
+        return nullptr;
+    }
+
+    return New(io.headerClassName(), io);
 }
 
 

@@ -25,6 +25,8 @@ License
 
 \*---------------------------------------------------------------------------*/
 
+#include "addToRunTimeSelectionTable.H"
+#include "regIOobject.H"
 #include "uniformDimensionedFields.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -39,6 +41,37 @@ defineTemplateTypeNameAndDebug(uniformDimensionedVectorField, 0);
 defineTemplateTypeNameAndDebug(uniformDimensionedSphericalTensorField, 0);
 defineTemplateTypeNameAndDebug(uniformDimensionedSymmTensorField, 0);
 defineTemplateTypeNameAndDebug(uniformDimensionedTensorField, 0);
+
+addToRunTimeSelectionTable
+(
+    regIOobject,
+    uniformDimensionedScalarField,
+    IOobject
+);
+addToRunTimeSelectionTable
+(
+    regIOobject,
+    uniformDimensionedVectorField,
+    IOobject
+);
+addToRunTimeSelectionTable
+(
+    regIOobject,
+    uniformDimensionedSphericalTensorField,
+    IOobject
+);
+addToRunTimeSelectionTable
+(
+    regIOobject,
+    uniformDimensionedSymmTensorField,
+    IOobject
+);
+addToRunTimeSelectionTable
+(
+    regIOobject,
+    uniformDimensionedTensorField,
+    IOobject
+);
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

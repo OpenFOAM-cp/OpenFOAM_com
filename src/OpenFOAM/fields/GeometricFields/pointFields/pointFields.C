@@ -27,6 +27,7 @@ License
 
 #include "polyMesh.H"
 #include "pointFields.H"
+#include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -53,6 +54,36 @@ namespace Foam
     defineTemplateTypeNameAndDebug(pointSymmTensorField, 0);
     defineTemplateTypeNameAndDebug(pointTensorField, 0);
 
+    addToRunTimeSelectionTable
+    (
+        regIOobject,
+        pointScalarField,
+        IOobject
+    );
+    addToRunTimeSelectionTable
+    (
+        regIOobject,
+        pointVectorField,
+        IOobject
+    );
+    addToRunTimeSelectionTable
+    (
+        regIOobject,
+        pointSphericalTensorField,
+        IOobject
+    );
+    addToRunTimeSelectionTable
+    (
+        regIOobject,
+        pointSymmTensorField,
+        IOobject
+    );
+    addToRunTimeSelectionTable
+    (
+        regIOobject,
+        pointTensorField,
+        IOobject
+    );
 } // End namespace Foam
 
 

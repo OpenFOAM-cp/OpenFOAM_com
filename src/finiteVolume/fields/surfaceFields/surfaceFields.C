@@ -26,6 +26,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "surfaceFields.H"
+#include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -66,6 +67,12 @@ defineTemplateTypeNameAndDebug(surfaceVectorField, 0);
 defineTemplateTypeNameAndDebug(surfaceSphericalTensorField, 0);
 defineTemplateTypeNameAndDebug(surfaceSymmTensorField, 0);
 defineTemplateTypeNameAndDebug(surfaceTensorField, 0);
+
+addToRunTimeSelectionTable(regIOobject, surfaceScalarField, IOobject);
+addToRunTimeSelectionTable(regIOobject, surfaceVectorField, IOobject);
+addToRunTimeSelectionTable(regIOobject, surfaceSphericalTensorField, IOobject);
+addToRunTimeSelectionTable(regIOobject, surfaceSymmTensorField, IOobject);
+addToRunTimeSelectionTable(regIOobject, surfaceTensorField, IOobject);
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

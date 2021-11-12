@@ -83,6 +83,15 @@ public:
         //- Construct from Istream
         UniformDimensionedField(const IOobject& io);
 
+        //- Return pointer to a new regIOobject created on freestore
+        //  from IOobject. Assumes IOobject contains header
+        //  information and io.db is an fvMesh. Return nullptr if no
+        //  constructor found
+        static refPtr<regIOobject> New(const IOobject& io)
+        {
+            return refPtr<regIOobject>(new UniformDimensionedField<Type>(io));
+        }
+
 
     //- Destructor
     virtual ~UniformDimensionedField();

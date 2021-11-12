@@ -90,6 +90,24 @@ Foam::pointMesh::pointMesh(const polyMesh& pMesh)
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
+
+Foam::refPtr<Foam::pointMesh> Foam::pointMesh::mesh(const objectRegistry& db)
+{
+    const auto* polyPtr = isA<polyMesh>(db);
+    if (polyPtr)
+    {
+        Pout<< "** isA type " << db.type()
+            << " name:" << db.name() << endl;
+
+        return pointMesh::New(*polyPtr);
+    }
+    else
+    {
+        return nullptr;
+    }
+}
+
+
 bool Foam::pointMesh::movePoints()
 {
     if (debug)

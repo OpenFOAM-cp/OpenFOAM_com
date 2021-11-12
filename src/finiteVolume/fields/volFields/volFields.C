@@ -27,6 +27,7 @@ License
 \*---------------------------------------------------------------------------*/
 
 #include "volFields.H"
+#include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
@@ -52,6 +53,11 @@ namespace Foam
     defineTemplateTypeNameAndDebug(volSymmTensorField, 0);
     defineTemplateTypeNameAndDebug(volTensorField, 0);
 
+    addToRunTimeSelectionTable(regIOobject, volScalarField, IOobject);
+    addToRunTimeSelectionTable(regIOobject, volVectorField, IOobject);
+    addToRunTimeSelectionTable(regIOobject, volSphericalTensorField, IOobject);
+    addToRunTimeSelectionTable(regIOobject, volSymmTensorField, IOobject);
+    addToRunTimeSelectionTable(regIOobject, volTensorField, IOobject);
 } // End namespace Foam
 
 

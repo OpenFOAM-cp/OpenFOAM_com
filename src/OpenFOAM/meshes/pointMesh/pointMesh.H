@@ -123,6 +123,10 @@ public:
             return GeoMesh<polyMesh>::mesh_.thisDb();
         }
 
+        //- Return mesh given objectRegistry. Reverse of thisDb. Returns
+        //  null if objectRegistry does not hold Mesh
+        static refPtr<pointMesh> mesh(const objectRegistry&);
+
 
     // Mesh motion
 

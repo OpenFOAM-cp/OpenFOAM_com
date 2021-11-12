@@ -562,6 +562,10 @@ public:
             const wordList& actualPatchTypes = wordList()
         );
 
+        //- Return new field from IOobject if iodb() is correct type. Returns
+        //  null otherwise
+        static refPtr<regIOobject> New(const IOobject& io);
+
 
     //- Destructor
     virtual ~GeometricField();
