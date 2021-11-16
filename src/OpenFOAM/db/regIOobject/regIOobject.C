@@ -37,7 +37,6 @@ License
 namespace Foam
 {
     defineTypeNameAndDebug(regIOobject, 0);
-
     defineRunTimeSelectionTable(regIOobject, IOobject);
 }
 
@@ -465,14 +464,14 @@ Foam::refPtr<Foam::regIOobject> Foam::regIOobject::New
     DebugInFunction << "Constructing regIOobject " << io.name()
         << " of type " << objectType << endl;
 
-    auto cstrIter = IOobjectConstructorTablePtr_->cfind(objectType);
+    auto* ctorPtr = IOobjectConstructorTable(objectType);
 
-    if (!cstrIter.found())
+    if (!ctorPtr)
     {
         return nullptr;
     }
 
-    return refPtr<regIOobject>(cstrIter()(io));
+    return refPtr<regIOobject>(ctorPtr(io));
 }
 
 

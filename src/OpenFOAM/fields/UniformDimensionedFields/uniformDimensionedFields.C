@@ -28,6 +28,7 @@ License
 #include "addToRunTimeSelectionTable.H"
 #include "regIOobject.H"
 #include "uniformDimensionedFields.H"
+#include "addToRunTimeSelectionTable.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 

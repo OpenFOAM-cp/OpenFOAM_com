@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2017 OpenFOAM Foundation
-    Copyright (C) 2019,2021 OpenCFD Ltd.
+    Copyright (C) 2019-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -237,22 +237,22 @@ Foam::GeometricField<Type, PatchField, GeoMesh>::New(const IOobject& io)
         << " for type " << Mesh::typeName
         << " io:" << io.name() << endl;
 
+    refPtr<regIOobject> ret;
+
     const auto meshPtr = GeoMesh::mesh(io.db());
     if (meshPtr)
     {
-        auto* ptr =
+        ret.reset
+        (
             new GeometricField<Type, PatchField, GeoMesh>
             (
                 io,
                 *meshPtr
-            );
+            )
+        );
+    }
 
-        return refPtr<regIOobject>(ptr);
-    }
-    else
-    {
-        return nullptr;
-    }
+    return ret;
 }
 
 

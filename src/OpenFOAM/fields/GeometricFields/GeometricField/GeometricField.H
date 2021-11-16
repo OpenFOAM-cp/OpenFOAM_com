@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2017 OpenFOAM Foundation
-    Copyright (C) 2015-2020 OpenCFD Ltd.
+    Copyright (C) 2015-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -562,8 +562,8 @@ public:
             const wordList& actualPatchTypes = wordList()
         );
 
-        //- Return new field from IOobject if iodb() is correct type. Returns
-        //  null otherwise
+        //- Return new field from IOobject if iodb() is correct type.
+        //- Returns null otherwise
         static refPtr<regIOobject> New(const IOobject& io);
 
 

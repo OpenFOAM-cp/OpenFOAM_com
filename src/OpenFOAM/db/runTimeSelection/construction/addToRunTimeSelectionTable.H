@@ -86,12 +86,11 @@ Note
         ##lookup##_##other##_(#lookup,#other,ver)
 
 
-//- Add to hash-table of functions with typename as the key and supplied
-//  Factory class
+//- Add to construction table with typeName as the key, using factory New
 #define addToRunTimeFactorySelectionTable\
 (baseType,thisType,factoryType,argNames)                                       \
                                                                                \
-    /* Add the thisType constructor function to the table */                   \
+    /* Add factoryType factory method to the table */                          \
     baseType::add##argNames##ConstructorToTable<thisType,factoryType>          \
         add##thisType##factoryType##argNames##ConstructorTo##baseType##Table_
 
