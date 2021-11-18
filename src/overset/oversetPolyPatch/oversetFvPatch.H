@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2016-2019 OpenCFD Ltd.
+    Copyright (C) 2016-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -37,6 +37,10 @@ SourceFiles
 #ifndef oversetFvPatch_H
 #define oversetFvPatch_H
 
+#include "coupledFvPatch.H"
+#include "oversetLduInterface.H"
+#include "lduInterface.H"
+
 #include "fvPatch.H"
 #include "oversetPolyPatch.H"
 #include "fvBoundaryMesh.H"
@@ -52,7 +56,9 @@ namespace Foam
 
 class oversetFvPatch
 :
-    public fvPatch
+    public fvPatch,
+    public lduInterface,
+    public oversetLduInterface
 {
     // Private data
 
@@ -99,6 +105,60 @@ public:
             {
                 return oversetPolyPatch_.master();
             }
+
+
+        // Interface transfer functions
+
+            //- Return the values of the given internal data adjacent to
+            //  the interface as a field
+            virtual tmp<labelField> interfaceInternalField
+            (
+                const labelUList& internalData
+            ) const;
+
+            //- Return the values of the given internal data adjacent to
+            //- the interface as a field using faceCell mapping
+            virtual tmp<labelField> interfaceInternalField
+            (
+                const labelUList& internalData,
+                const labelUList& faceCells
+            ) const;
+
+
+            //- Initialise transfer of internal field adjacent to the interface
+            virtual void initInternalFieldTransfer
+            (
+                const Pstream::commsTypes commsType,
+                const labelUList& iF
+            ) const;
+
+
+            //- Initialise transfer of internal field adjacent to the interface
+            //- using faceCells mapping
+            virtual void initInternalFieldTransfer
+            (
+                const Pstream::commsTypes commsType,
+                const labelUList& iF,
+                const labelUList& faceCells
+            ) const;
+
+
+            //- Transfer and return internal field adjacent to the interface
+            virtual tmp<labelField> internalFieldTransfer
+            (
+                const Pstream::commsTypes commsType,
+                const labelUList& iF
+            ) const;
+
+
+            //- Transfer and return internal field adjacent to the interface
+            //- using nbrFaceCells mapping
+            virtual tmp<labelField> internalFieldTransfer
+            (
+                const Pstream::commsTypes commsType,
+                const labelUList& iF,
+                const labelUList& nbrFaceCells
+            ) const;
 };
 
 

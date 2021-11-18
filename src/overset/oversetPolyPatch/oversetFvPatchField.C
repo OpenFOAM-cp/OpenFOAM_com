@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2016-2018 OpenCFD Ltd.
+    Copyright (C) 2016-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -29,6 +29,7 @@ License
 #include "cellCellStencil.H"
 #include "cellCellStencilObject.H"
 #include "oversetFvMeshBase.H"
+#include "syncTools.H"
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
@@ -39,11 +40,16 @@ Foam::oversetFvPatchField<Type>::oversetFvPatchField
     const DimensionedField<Type, volMesh>& iF
 )
 :
-    zeroGradientFvPatchField<Type>(p, iF),
+    coupledFvPatchField<Type>(p, iF),
     oversetPatch_(refCast<const oversetFvPatch>(p)),
     setHoleCellValue_(false),
+    massCorrection_(false),
     interpolateHoleCellValue_(false),
-    holeCellValue_(pTraits<Type>::min)
+    holeCellValue_(pTraits<Type>::min),
+    fringeUpperCoeffs_(),
+    fringeLowerCoeffs_(),
+    fringeFaces_(),
+    zoneId_(-1)
 {}
 
 
@@ -56,11 +62,16 @@ Foam::oversetFvPatchField<Type>::oversetFvPatchField
     const fvPatchFieldMapper& mapper
 )
 :
-    zeroGradientFvPatchField<Type>(ptf, p, iF, mapper),
+    coupledFvPatchField<Type>(ptf, p, iF, mapper),
     oversetPatch_(refCast<const oversetFvPatch>(p)),
     setHoleCellValue_(ptf.setHoleCellValue_),
+    massCorrection_(ptf.massCorrection_),
     interpolateHoleCellValue_(ptf.interpolateHoleCellValue_),
-    holeCellValue_(ptf.holeCellValue_)
+    holeCellValue_(ptf.holeCellValue_),
+    fringeUpperCoeffs_(ptf.fringeUpperCoeffs_),
+    fringeLowerCoeffs_(ptf.fringeLowerCoeffs_),
+    fringeFaces_(ptf.fringeFaces_),
+    zoneId_(ptf.zoneId_)
 {}
 
 
@@ -72,9 +83,10 @@ Foam::oversetFvPatchField<Type>::oversetFvPatchField
     const dictionary& dict
 )
 :
-    zeroGradientFvPatchField<Type>(p, iF, dict),
+    coupledFvPatchField<Type>(p, iF, dict, false),
     oversetPatch_(refCast<const oversetFvPatch>(p, dict)),
     setHoleCellValue_(dict.lookupOrDefault<bool>("setHoleCellValue", false)),
+    massCorrection_(dict.lookupOrDefault<bool>("massCorrection", false)),
     interpolateHoleCellValue_
     (
         dict.lookupOrDefault<bool>("interpolateHoleCellValue", false)
@@ -84,8 +96,24 @@ Foam::oversetFvPatchField<Type>::oversetFvPatchField
         setHoleCellValue_
       ? dict.get<Type>("holeCellValue")
       : pTraits<Type>::min
-    )
-{}
+    ),
+    fringeUpperCoeffs_(),
+    fringeLowerCoeffs_(),
+    fringeFaces_(),
+    zoneId_(dict.lookupOrDefault<label>("zone", -1))
+{
+    if (dict.found("value"))
+    {
+        Field<Type>::operator=
+        (
+            Field<Type>("value", dict, p.size())
+        );
+    }
+    else
+    {
+        Field<Type>::operator=(this->patchInternalField());
+    }
+}
 
 
 template<class Type>
@@ -94,11 +122,16 @@ Foam::oversetFvPatchField<Type>::oversetFvPatchField
     const oversetFvPatchField<Type>& ptf
 )
 :
-    zeroGradientFvPatchField<Type>(ptf),
+    coupledFvPatchField<Type>(ptf),
     oversetPatch_(ptf.oversetPatch_),
     setHoleCellValue_(ptf.setHoleCellValue_),
+    massCorrection_(ptf.massCorrection_),
     interpolateHoleCellValue_(ptf.interpolateHoleCellValue_),
-    holeCellValue_(ptf.holeCellValue_)
+    holeCellValue_(ptf.holeCellValue_),
+    fringeUpperCoeffs_(ptf.fringeUpperCoeffs_),
+    fringeLowerCoeffs_(ptf.fringeLowerCoeffs_),
+    fringeFaces_(ptf.fringeFaces_),
+    zoneId_(ptf.zoneId_)
 {}
 
 
@@ -109,15 +142,531 @@ Foam::oversetFvPatchField<Type>::oversetFvPatchField
     const DimensionedField<Type, volMesh>& iF
 )
 :
-    zeroGradientFvPatchField<Type>(ptf, iF),
+    coupledFvPatchField<Type>(ptf, iF),
     oversetPatch_(ptf.oversetPatch_),
     setHoleCellValue_(ptf.setHoleCellValue_),
+    massCorrection_(ptf.massCorrection_),
     interpolateHoleCellValue_(ptf.interpolateHoleCellValue_),
-    holeCellValue_(ptf.holeCellValue_)
+    holeCellValue_(ptf.holeCellValue_),
+    fringeUpperCoeffs_(ptf.fringeUpperCoeffs_),
+    fringeLowerCoeffs_(ptf.fringeLowerCoeffs_),
+    fringeFaces_(ptf.fringeFaces_),
+    zoneId_(ptf.zoneId_)
 {}
 
 
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
+
+template<class Type>
+void Foam::oversetFvPatchField<Type>::storeFringeCoefficients
+(
+    const fvMatrix<Type>& matrix
+)
+{
+    const fvMesh& mesh = this->internalField().mesh();
+
+    const cellCellStencilObject& overlap = Stencil::New(mesh);
+    const labelList& cellTypes = overlap.cellTypes();
+    const labelList& zoneID = overlap.zoneID();
+    const labelUList& own = mesh.owner();
+    const labelUList& nei = mesh.neighbour();
+
+    const polyBoundaryMesh& boundaryMesh = mesh.boundaryMesh();
+
+    label fringesFaces = 0;
+
+    forAll(own, facei)
+    {
+        label zonei = zoneID[own[facei]];
+
+        label ownType = cellTypes[own[facei]];
+        label neiType = cellTypes[nei[facei]];
+
+        bool ownCalc =
+            (ownType == cellCellStencil::CALCULATED)
+            && (neiType == cellCellStencil::INTERPOLATED);
+
+        bool neiCalc =
+            (ownType == cellCellStencil::INTERPOLATED)
+            && (neiType == cellCellStencil::CALCULATED);
+
+        bool ownNei = (ownCalc || neiCalc);
+
+        if
+        (
+            (ownNei && (zonei == zoneId_))||(ownNei && (zoneId_ == -1))
+        )
+        {
+            fringesFaces++;
+        }
+    }
+
+    const fvPatchList& patches = mesh.boundary();
+
+    labelList neiCellTypes;
+    syncTools::swapBoundaryCellList(mesh, cellTypes, neiCellTypes);
+    {
+        forAll(patches, patchi)
+        {
+            const fvPatch& curPatch = patches[patchi];
+
+            const labelUList& fc = curPatch.faceCells();
+
+            label start = curPatch.start();
+
+            forAll(fc, i)
+            {
+                label facei = start+i;
+                label celli = fc[i];
+                label ownType = cellTypes[celli];
+                label neiType = neiCellTypes[facei-mesh.nInternalFaces()];
+
+                label zonei = zoneID[celli];
+
+                bool ownCalc =
+                    (ownType == cellCellStencil::CALCULATED)
+                 && (neiType == cellCellStencil::INTERPOLATED);
+
+
+                if (ownCalc && (zonei == zoneId_))
+                {
+                    fringesFaces++;
+                }
+            }
+        }
+    }
+    fringeUpperCoeffs_.setSize(fringesFaces, Zero);
+    fringeLowerCoeffs_.setSize(fringesFaces, Zero);
+    fringeFaces_.setSize(fringesFaces, -1);
+
+    const scalarField& upper = matrix.upper();
+    const scalarField& lower = matrix.lower();
+
+    fringesFaces = 0;
+    forAll(own, facei)
+    {
+        label zonei = zoneID[own[facei]];
+
+        label ownType = cellTypes[own[facei]];
+        label neiType = cellTypes[nei[facei]];
+
+        bool ownCalc =
+            (ownType == cellCellStencil::CALCULATED)
+            && (neiType == cellCellStencil::INTERPOLATED);
+
+        bool neiCalc =
+            (ownType == cellCellStencil::INTERPOLATED)
+            && (neiType == cellCellStencil::CALCULATED);
+
+        bool ownNei = (ownCalc || neiCalc);
+
+        if
+        (
+            (ownNei && (zonei == zoneId_)) || (ownNei && (zoneId_ == -1))
+        )
+        {
+            fringeUpperCoeffs_[fringesFaces] = upper[facei];
+            fringeLowerCoeffs_[fringesFaces] = lower[facei];
+            fringeFaces_[fringesFaces] = facei;
+            fringesFaces++;
+        }
+    }
+
+    forAll(boundaryMesh, patchi)
+    {
+        const polyPatch& p = boundaryMesh[patchi];
+
+        if (isA<coupledPolyPatch>(p))
+        {
+            const labelUList& fc = p.faceCells();
+            label start = p.start();
+
+            forAll(fc, i)
+            {
+                label facei = start+i;
+                label celli = fc[i];
+                label ownType = cellTypes[celli];
+                label neiType = neiCellTypes[facei-mesh.nInternalFaces()];
+
+                label zonei = zoneID[celli];
+
+                bool ownCalc =
+                    (ownType == cellCellStencil::CALCULATED)
+                    && (neiType == cellCellStencil::INTERPOLATED);
+
+
+                bool neiCalc =
+                    (neiType == cellCellStencil::CALCULATED)
+                    && (ownType == cellCellStencil::INTERPOLATED);
+
+
+                if ((ownCalc||neiCalc)  && (zonei == zoneId_))
+                {
+                    fringeLowerCoeffs_[fringesFaces] =
+                        component
+                        (
+                            matrix.internalCoeffs()[patchi][facei],
+                            0
+                        );
+
+                    fringeUpperCoeffs_[fringesFaces] =
+                        component
+                        (
+                            matrix.boundaryCoeffs()[patchi][facei],
+                            0
+                        );
+
+                    fringeFaces_[fringesFaces] = facei;
+
+                    fringesFaces++;
+                }
+            }
+
+        }
+    }
+}
+
+
+template<class Type>
+Foam::tmp<Foam::Field<Type>> Foam::oversetFvPatchField<Type>
+::fringeFlux
+(
+    const Field<Type>& psi,
+    const fvMatrix<Type>& matrix,
+    const surfaceScalarField& phi
+) const
+{
+    Field<Type> massIn(fringeFaces_.size(), Zero);
+
+    scalar phiIn(Zero);
+
+    const scalarField& upper = matrix.upper();
+    const scalarField& lower = matrix.lower();
+
+    if (massCorrection_ && this->oversetPatch_.master())
+    {
+        const fvMesh& mesh = this->internalField().mesh();
+        const cellCellStencilObject& overlap = Stencil::New(mesh);
+        const labelList& cellTypes = overlap.cellTypes();
+        const labelList& zoneID = overlap.zoneID();
+
+        // Check all faces on the outside of interpolated cells
+        const labelUList& own = mesh.owner();
+        const labelUList& nei = mesh.neighbour();
+
+        label fringesFaces = 0;
+        forAll(own, facei)
+        {
+            label zonei = zoneID[own[facei]];
+
+            label ownType = cellTypes[own[facei]];
+            label neiType = cellTypes[nei[facei]];
+
+            bool ownCalc =
+                (ownType == cellCellStencil::CALCULATED)
+                && (neiType == cellCellStencil::INTERPOLATED);
+
+            bool neiCalc =
+                (ownType == cellCellStencil::INTERPOLATED)
+                && (neiType == cellCellStencil::CALCULATED);
+
+            bool ownNei = (ownCalc || neiCalc);
+
+            if
+            (
+                (ownNei && (zonei == zoneId_)) || (ownNei && (zoneId_ == -1))
+            )
+            {
+                label fringei = fringeFaces_[fringesFaces];
+
+                // Get fringe upper/lower coeffs
+                //const scalar& ufc = fringeUpperCoeffs_[fringesFaces];
+                //const scalar& lfc = fringeLowerCoeffs_[fringesFaces];
+
+                const scalar& ufc = upper[fringei];
+                const scalar& lfc = lower[fringei];
+
+                const Type curFlux =
+                    ufc*psi[nei[fringei]] - lfc*psi[own[fringei]];
+
+                if (neiCalc)
+                {
+                    phiIn -= phi[fringei];
+                    massIn[fringesFaces] -= curFlux;
+                }
+                else
+                {
+                    phiIn += phi[fringei];
+                    massIn[fringesFaces] += curFlux;
+                }
+                fringesFaces++;
+            }
+
+        }
+    }
+
+    return tmp<Field<Type>>(new Field<Type>(massIn));
+}
+
+
+template<class Type>
+void Foam::oversetFvPatchField<Type>::adjustPsi
+(
+    Field<scalar>& psi,
+    const lduAddressing& lduAddr,
+    solveScalarField& result
+) const
+{
+    const fvMesh& mesh = this->internalField().mesh();
+
+    //const surfaceScalarField& sf = mesh.magSf();
+
+    const cellCellStencilObject& overlap = Stencil::New(mesh);
+    const labelList& cellTypes = overlap.cellTypes();
+    const labelList& zoneID = overlap.zoneID();
+
+    // Pass1: accumulate all fluxes, calculate correction factor
+
+    scalarField interpolatedCoeffs(fringeUpperCoeffs_.size(), Zero);
+
+    // Options for scaling corrections
+    //scalar invDiagCoeffs(0);
+    scalar massIn(0);
+    scalar offDiagCoeffs(0);
+
+    //scalar fringeSurf(0);
+    labelField facePerCell(cellTypes.size(), 0);
+    //scalarField surfPerCell(cellTypes.size(), 0);
+
+    // Check all faces on the outside of interpolated cells
+    const labelUList& own = mesh.owner();
+    const labelUList& nei = mesh.neighbour();
+
+    label fringesFaces = 0;
+    {
+        forAll(own, facei)
+        {
+            label zonei = zoneID[own[facei]];
+
+            label ownType = cellTypes[own[facei]];
+            label neiType = cellTypes[nei[facei]];
+
+            bool ownCalc =
+                (ownType == cellCellStencil::CALCULATED)
+                && (neiType == cellCellStencil::INTERPOLATED);
+
+            bool neiCalc =
+                (ownType == cellCellStencil::INTERPOLATED)
+                && (neiType == cellCellStencil::CALCULATED);
+
+            bool ownNei = (ownCalc || neiCalc);
+
+            if
+            (
+                (ownNei && (zonei == zoneId_)) || (ownNei && (zoneId_ == -1))
+            )
+            {
+                // Get fringe upper/lower coeffs
+                const scalar& ufc = fringeUpperCoeffs_[fringesFaces];
+                const scalar& lfc = fringeLowerCoeffs_[fringesFaces];
+
+                const scalar curFlux =
+                    ufc*psi[nei[facei]] - lfc*psi[own[facei]];
+
+                if (neiCalc) // interpolated is owner
+                {
+                    massIn -= curFlux;
+                    offDiagCoeffs += lfc;
+                    //invDiagCoeffs += 1/lfc;
+                    //interpolatedCoeffs[fringesFaces] = 1/lfc;
+                    //fringeSurf += sf[facei];
+                    facePerCell[own[facei]]++;
+                    //surfPerCell[own[facei]] += sf[facei];
+                }
+                else
+                {
+                    massIn += curFlux;
+                    offDiagCoeffs += ufc;
+                    //invDiagCoeffs += 1/ufc;
+                    //interpolatedCoeffs[fringesFaces] = 1/ufc;
+                    //fringeSurf += sf[facei];
+                    facePerCell[nei[facei]]++;
+                    //surfPerCell[nei[facei]] += sf[facei];
+                }
+                fringesFaces++;
+            }
+        }
+    }
+
+    scalarField weights(facePerCell.size(), 1.0);
+    forAll (weights, celli)
+    {
+        if (facePerCell[celli] > 1)
+        {
+            weights[celli] = 1.0/facePerCell[celli];
+        }
+    }
+
+     // Check all coupled faces on the outside of interpolated cells
+    labelList neiCellTypes;
+    syncTools::swapBoundaryCellList(mesh, cellTypes, neiCellTypes);
+
+    const fvPatchList& boundaryMesh = mesh.boundary();
+
+    forAll(boundaryMesh, patchi)
+    {
+        const polyPatch& p = mesh.boundaryMesh()[patchi];
+
+        if (isA<coupledPolyPatch>(p))
+        {
+            const coupledPolyPatch& coupledPatch =
+                refCast<const coupledPolyPatch>(p);
+
+                const labelUList& fc = p.faceCells();
+                label start = p.start();
+
+            forAll(fc, i)
+            {
+                label facei = start+i;
+                label celli = fc[i];
+                label ownType = cellTypes[celli];
+                label neiType = neiCellTypes[facei-mesh.nInternalFaces()];
+
+                label zonei = zoneID[celli];
+
+                bool ownCalc =
+                    (ownType == cellCellStencil::CALCULATED)
+                    && (neiType == cellCellStencil::INTERPOLATED);
+
+
+                bool neiCalc =
+                    (neiType == cellCellStencil::CALCULATED)
+                    && (ownType == cellCellStencil::INTERPOLATED);
+
+
+                if ((ownCalc||neiCalc)  && (zonei == zoneId_))
+                {
+                    const scalar psiOwn = psi[celli];
+                    const scalar& lfc = fringeLowerCoeffs_[fringesFaces];
+                    const scalar curFlux = lfc*psiOwn;
+
+                    if (ownCalc)
+                    {
+                        massIn -= curFlux;
+
+                        if (coupledPatch.owner())
+                        {
+                            offDiagCoeffs -= lfc;
+                        }
+
+                        fringesFaces++;
+                    }
+                    else
+                    {
+                        massIn += curFlux;
+
+                        if (coupledPatch.owner())
+                        {
+                            offDiagCoeffs -= lfc;
+                        }
+
+                        fringesFaces++;
+                    }
+                }
+            }
+        }
+    }
+
+    reduce(massIn, sumOp<scalar>());
+    reduce(offDiagCoeffs, sumOp<scalar>());
+
+    scalar psiCorr = -massIn/offDiagCoeffs;
+
+    //scalarField psiCorrs(fringeUpperCoeffs_.size(), Zero);
+    //scalarField massIns(fringeUpperCoeffs_.size());
+
+    //forAll (psiCorrs, facei)
+    //{
+        //label fringei = fringeFaces_[facei];
+
+        //massIns[facei] = massIn*sf[facei]/fringeSurf;//interpolatedCoeffs[facei]/
+
+    //    massIns[facei] = massIn/fringeUpperCoeffs_.size();
+
+        //massIns[facei] = massIn*interpolatedCoeffs[facei]/invDiagCoeffs;
+
+    //    psiCorrs[facei] = -massIns[facei];
+    //}
+
+    //scalar relax(mesh.fieldRelaxationFactor("massCorrection"));
+/*
+    fringesFaces = 0;
+    forAll(own, facei)
+    {
+        label zonei = zoneID[own[facei]];
+
+        label ownType = cellTypes[own[facei]];
+        label neiType = cellTypes[nei[facei]];
+
+        bool ownCalc =
+            (ownType == cellCellStencil::CALCULATED)
+            && (neiType == cellCellStencil::INTERPOLATED);
+
+        bool neiCalc =
+            (ownType == cellCellStencil::INTERPOLATED)
+            && (neiType == cellCellStencil::CALCULATED);
+
+
+        if
+        (
+            ((ownCalc || neiCalc) && ((zonei == zoneId_) && (zoneId_ != -1)))
+            ||((ownCalc || neiCalc) && (zoneId_ == -1))
+        )
+        {
+            const scalar& ufc = fringeUpperCoeffs_[fringesFaces];
+            const scalar& lfc = fringeLowerCoeffs_[fringesFaces];
+
+            if (neiCalc) // interpolated is owner
+            {
+                psi[own[facei]] +=
+                    relax*weights[own[facei]]*psiCorrs[fringesFaces]/lfc;
+            }
+            else
+            {
+                psi[nei[facei]] +=
+                    relax*weights[nei[facei]]*psiCorrs[fringesFaces]/ufc;
+
+            }
+            fringesFaces++;
+        }
+    }
+*/
+
+    forAll (cellTypes, celli)
+    {
+        bool bInter(cellTypes[celli] == cellCellStencil::INTERPOLATED);
+        label zonei = zoneID[celli];
+        if
+        (
+            (bInter && (zonei == zoneId_)) ||(bInter && (zoneId_ == -1))
+        )
+        {
+            psi[celli] += psiCorr;
+        }
+    }
+}
+
+
+template<class Type>
+Foam::tmp<Foam::Field<Type>> Foam::oversetFvPatchField<Type>::
+patchNeighbourField() const
+{
+    return tmp<Field<Type>>
+    (
+        new Field<Type>(this->size(), Zero)
+    );
+}
+
 
 template<class Type>
 void Foam::oversetFvPatchField<Type>::initEvaluate
@@ -287,7 +836,7 @@ void Foam::oversetFvPatchField<Type>::initEvaluate
         }
     }
 
-    zeroGradientFvPatchField<Type>::initEvaluate(commsType);
+    coupledFvPatchField<Type>::initEvaluate(commsType);
 }
 
 
@@ -297,8 +846,6 @@ void Foam::oversetFvPatchField<Type>::manipulateMatrix
     fvMatrix<Type>& matrix
 )
 {
-    //const word& fldName = this->internalField().name();
-
     if (this->manipulatedMatrix())
     {
         return;
@@ -308,6 +855,11 @@ void Foam::oversetFvPatchField<Type>::manipulateMatrix
 
     if (ovp.master())
     {
+        if (massCorrection_)
+        {
+            storeFringeCoefficients(matrix);
+        }
+
         // Trigger interpolation
         const fvMesh& mesh = this->internalField().mesh();
         const word& fldName = this->internalField().name();
@@ -316,8 +868,6 @@ void Foam::oversetFvPatchField<Type>::manipulateMatrix
         // TBD. This should be cleaner.
         if (&mesh.lduAddr() == &mesh.fvMesh::lduAddr())
         {
-            //Pout<< FUNCTION_NAME << "SKIPPING MANIP field:" << fldName
-            //    << " patch:" << ovp.name() << endl;
             return;
         }
 
@@ -535,14 +1085,53 @@ void Foam::oversetFvPatchField<Type>::manipulateMatrix
         }
     }
 
-    zeroGradientFvPatchField<Type>::manipulateMatrix(matrix);
+     fvPatchField<Type>::manipulateMatrix(matrix);
+}
+
+
+template<class Type>
+void Foam::oversetFvPatchField<Type>::initInterfaceMatrixUpdate
+(
+    solveScalarField& result,
+    const bool add,
+    const lduAddressing& lduAddr,
+    const label interfacei,
+    const solveScalarField& psiInternal,
+    const scalarField& coeffs,
+    const direction cmpt,
+    const Pstream::commsTypes commsType
+) const
+{
+}
+
+
+template<class Type>
+void Foam::oversetFvPatchField<Type>::updateInterfaceMatrix
+(
+    solveScalarField& result,
+    const bool add,
+    const lduAddressing& lduAddr,
+    const label patchId,
+    const solveScalarField& psiInternal,
+    const scalarField& coeffs,
+    const direction,
+    const Pstream::commsTypes commsType
+) const
+{
+    scalarField& psi = const_cast<scalarField&>(psiInternal);
+
+    if (massCorrection_ && this->oversetPatch_.master())
+    {
+        adjustPsi(psi, lduAddr, result);
+    }
 }
 
 
 template<class Type>
 void Foam::oversetFvPatchField<Type>::write(Ostream& os) const
 {
-    zeroGradientFvPatchField<Type>::write(os);
+    coupledFvPatchField<Type>::write(os);
+
     if (this->setHoleCellValue_)
     {
         os.writeEntry("setHoleCellValue", setHoleCellValue_);
@@ -554,8 +1143,18 @@ void Foam::oversetFvPatchField<Type>::write(Ostream& os) const
             interpolateHoleCellValue_
         );
     }
-    // Make sure to write the value for ease of postprocessing.
-    this->writeEntry("value", os);
+    os.writeEntryIfDifferent
+    (
+        "massCorrection",
+        false,
+        massCorrection_
+    );
+    os.writeEntryIfDifferent
+    (
+        "zone",
+        -1,
+        zoneId_
+    );
 }
 
 

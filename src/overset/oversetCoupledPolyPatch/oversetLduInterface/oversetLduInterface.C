@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2017-2021 OpenCFD Ltd.
+    Copyright (C) 2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -23,42 +23,22 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-InNamespace
-    Foam
-
-Description
-    Adjust the balance of fluxes on the faces between interpolated
-    and calculated to obey continuity.
-
-SourceFiles
-    oversetAdjustPhi.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef oversetAdjustPhi_H
-#define oversetAdjustPhi_H
+#include "oversetLduInterface.H"
 
-#include "volFieldsFwd.H"
-#include "surfaceFieldsFwd.H"
-
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
+// * * * * * * * * * * * * * * Static Data Members * * * * * * * * * * * * * //
 
 namespace Foam
 {
+    defineTypeNameAndDebug(oversetLduInterface, 0);
+}
 
-//- Adjust the balance of fluxes to obey continuity.
-//  Return true if no flux was adjusted.
-bool oversetAdjustPhi
-(
-    surfaceScalarField& phi,
-    const volVectorField& U,
-    const label zoneId = -1
-);
+// * * * * * * * * * * * * * * * * Destructor  * * * * * * * * * * * * * * * //
 
-} // End namespace Foam
+Foam::oversetLduInterface::~oversetLduInterface()
+{}
 
-// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
-
-#endif
 
 // ************************************************************************* //

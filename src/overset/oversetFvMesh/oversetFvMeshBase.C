@@ -587,8 +587,6 @@ Foam::lduInterfacePtrsList Foam::oversetFvMeshBase::interfaces() const
 {
     if (!active_)
     {
-        //return dynamicMotionSolverFvMesh::interfaces();
-        //return dynamicFvMesh::interfaces();
         return mesh_.fvMesh::interfaces();
     }
     if (!lduPtr_)
@@ -615,8 +613,6 @@ Foam::oversetFvMeshBase::primitiveLduAddr() const
 
 bool Foam::oversetFvMeshBase::update()
 {
-    //if (dynamicMotionSolverFvMesh::update())
-    //if (dynamicMotionSolverListFvMesh::update())
     {
         // Calculate the local extra faces for the interpolation. Note: could
         // let demand-driven lduAddr() trigger it but just to make sure.
@@ -668,9 +664,6 @@ bool Foam::oversetFvMeshBase::writeObject
     const bool valid
 ) const
 {
-    //bool ok = dynamicMotionSolverFvMesh::writeObject(streamOpt, valid);
-    //bool ok = dynamicMotionSolverListFvMesh::writeObject(streamOpt, valid);
-
     // For postprocessing : write cellTypes and zoneID
     bool ok = false;
     {

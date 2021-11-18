@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2017-2021 OpenCFD Ltd.
+    Copyright (C) 2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -23,37 +23,55 @@ License
     You should have received a copy of the GNU General Public License
     along with OpenFOAM.  If not, see <http://www.gnu.org/licenses/>.
 
-InNamespace
-    Foam
+Class
+    oversetLduInterface
 
 Description
-    Adjust the balance of fluxes on the faces between interpolated
-    and calculated to obey continuity.
+    An abstract base class for overset coupled interfaces.
 
 SourceFiles
-    oversetAdjustPhi.C
+    oversetLduInterface.C
 
 \*---------------------------------------------------------------------------*/
 
-#ifndef oversetAdjustPhi_H
-#define oversetAdjustPhi_H
+#ifndef oversetLduInterface_H
+#define oversetLduInterface_H
 
-#include "volFieldsFwd.H"
-#include "surfaceFieldsFwd.H"
+//#include "lduInterface.H"
+#include "typeInfo.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 namespace Foam
 {
 
-//- Adjust the balance of fluxes to obey continuity.
-//  Return true if no flux was adjusted.
-bool oversetAdjustPhi
-(
-    surfaceScalarField& phi,
-    const volVectorField& U,
-    const label zoneId = -1
-);
+/*---------------------------------------------------------------------------*\
+                      Class oversetLduInterface Declaration
+\*---------------------------------------------------------------------------*/
+
+class oversetLduInterface
+{
+
+public:
+
+    //- Runtime type information
+    TypeName("oversetLduInterface");
+
+
+    // Constructors
+
+        //- Construct null
+        oversetLduInterface()
+        {}
+
+
+    //- Destructor
+    virtual ~oversetLduInterface();
+
+};
+
+
+// * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 } // End namespace Foam
 

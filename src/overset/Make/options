@@ -1,7 +1,4 @@
-/* Add to EXE_INC as required:
-   -DFULLDEBUG -O0 -g
- */
-
+/* -g -O0 -DFULLDEBUG */
 EXE_INC = \
     -I$(LIB_SRC)/finiteVolume/lnInclude \
     -I$(LIB_SRC)/fileFormats/lnInclude \

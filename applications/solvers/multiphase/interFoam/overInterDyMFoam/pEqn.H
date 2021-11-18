@@ -6,36 +6,22 @@
     volVectorField H("H", UEqn.H());
 
     volVectorField HbyA("HbyA", U);
-    //HbyA = rAU*UEqn.H();
+
     HbyA = constrainHbyA(rAU*H, U, p_rgh);
 
     surfaceScalarField phiHbyA("phiHbyA", fvc::flux(HbyA));
 
     MRF.makeRelative(phiHbyA);
 
-    if (p_rgh.needReference())
-    {
-        fvc::makeRelative(phiHbyA, U);
-        adjustPhi(phiHbyA, U, p_rgh);
-        fvc::makeAbsolute(phiHbyA, U);
-    }
-
     surfaceScalarField phig
     (
         (
             mixture.surfaceTensionForce()
-          - ghf*fvc::snGrad(rho)
-        )*faceMask*rAUf*mesh.magSf()
+          - ghf*fvc::snGrad(cellMask*rho)
+        )*rAUf*faceMask*mesh.magSf()
     );
 
     phiHbyA += phig;
-
-    if (adjustFringe)
-    {
-        fvc::makeRelative(phiHbyA, U);
-        oversetAdjustPhi(phiHbyA, U);
-        fvc::makeAbsolute(phiHbyA, U);
-    }
 
     // Update the pressure BCs to ensure flux consistency
     constrainPressure(p_rgh, U, phiHbyA, rAUf, MRF);
@@ -67,8 +53,6 @@
             fvOptions.correct(U);
         }
     }
-
-
 
     #include "continuityErrs.H"
 

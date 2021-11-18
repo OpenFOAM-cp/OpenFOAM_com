@@ -15,21 +15,13 @@ phiHbyA = fvc::flux(HbyA);
 
 MRF.makeRelative(phiHbyA);
 
-if (p.needReference())
-{
-    fvc::makeRelative(phiHbyA, U);
-    adjustPhi(phiHbyA, U, p);
-    fvc::makeAbsolute(phiHbyA, U);
-}
-
-// WIP: To adjust phi on fringe faces to help mass
-// conservation
 if (adjustFringe)
 {
     fvc::makeRelative(phiHbyA, U);
-    oversetAdjustPhi(phiHbyA, U);
+    oversetAdjustPhi(phiHbyA, U, zoneIdMass);
     fvc::makeAbsolute(phiHbyA, U);
 }
+
 
 while (pimple.correctNonOrthogonal())
 {

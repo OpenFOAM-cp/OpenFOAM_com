@@ -50,6 +50,7 @@ Foam::cellCellStencil::cellTypeNames_
     { cellType::INTERPOLATED, "interpolated" },
     { cellType::HOLE, "hole" },
     { cellType::SPECIAL, "special" },
+    { cellType::POROUS, "porous" },
 });
 
 
@@ -429,7 +430,7 @@ void Foam::cellCellStencil::walkFront
     if (useLayer > holeLayers)
     {
         FatalErrorInFunction<< "useLayer: " << useLayer
-            << "is larger than : " <<  holeLayers
+            << " is larger than : " <<  holeLayers
             << abort(FatalError);
     }
 

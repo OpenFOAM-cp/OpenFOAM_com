@@ -48,7 +48,7 @@ Description
 #include "cellCellStencilObject.H"
 #include "localMin.H"
 #include "oversetAdjustPhi.H"
-
+#include "oversetCoupledFvPatchField.H"
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])
@@ -84,6 +84,8 @@ int main(int argc, char *argv[])
     while (runTime.run())
     {
         #include "readDyMControls.H"
+        #include "readOversetDyMControls.H"
+
         #include "CourantNo.H"
 
         #include "setDeltaT.H"
@@ -99,12 +101,6 @@ int main(int argc, char *argv[])
             #include "setCellMask.H"
             #include "setInterpolatedCells.H"
             #include "correctPhiFaceMask.H"
-
-            if (correctPhi)
-            {
-                // Corrects flux on separated regions
-                #include "correctPhi.H"
-            }
 
             fvc::makeRelative(phi, U);
 

@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2014-2020 OpenCFD Ltd.
+    Copyright (C) 2014-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -70,13 +70,6 @@ void Foam::cellCellStencils::cellVolumeWeight::findHoles
     const labelList& own = mesh.faceOwner();
     const labelList& nei = mesh.faceNeighbour();
 
-
-    // The input cellTypes will be
-    // - HOLE           : cell part covered by other-mesh patch
-    // - INTERPOLATED   : cell fully covered by other-mesh patch
-    //                    or next to 'overset' patch
-    // - CALCULATED     : otherwise
-    //
     // so we start a walk from our patches and any cell we cannot reach
     // (because we walk is stopped by other-mesh patch) is a hole.
 

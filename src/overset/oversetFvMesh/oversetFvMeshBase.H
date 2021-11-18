@@ -104,21 +104,10 @@ protected:
             const lduInterfacePtrsList&
         ) const;
 
-//         //- Helper: strip off trailing _0
-//         static word baseName(const word& name);
 
         //- Freeze values at holes
         //template<class Type>
         //void freezeHoles(fvMatrix<Type>&) const;
-
-        //- Get scalar interfaces of certain type
-        //template<class GeoField, class PatchType>
-        //lduInterfaceFieldPtrsList scalarInterfaces(const GeoField& psi) const;
-
-        //- Add interpolation to matrix (coefficients)
-        //template<class Type>
-        //void addInterpolation(fvMatrix<Type>&, const scalarField& norm) const;
-
 
          //- Scale coefficient depending on cell type
         template<class Type>

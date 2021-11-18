@@ -26,8 +26,13 @@ oversetAdjustPhi/oversetAdjustPhi.C
 
 regionsToCell/regionsToCell.C
 
-
 lduPrimitiveProcessorInterface/GAMG/calculatedProcessorGAMGInterface.C
 lduPrimitiveProcessorInterface/GAMG/calculatedProcessorGAMGInterfaceField.C
+
+oversetCoupledPolyPatch/oversetLduInterfaceField/oversetLduInterfaceField.C
+oversetCoupledPolyPatch/oversetLduInterface/oversetLduInterface.C
+
+oversetCoupledPolyPatch/oversetGAMGInterface/oversetGAMGInterface.C
+oversetCoupledPolyPatch/oversetGAMGInterfaceField/oversetGAMGInterfaceField.C
 
 LIB = $(FOAM_LIBBIN)/liboverset

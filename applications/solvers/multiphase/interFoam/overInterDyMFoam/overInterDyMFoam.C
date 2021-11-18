@@ -6,7 +6,7 @@
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
     Copyright (C) 2011-2014 OpenFOAM Foundation
-    Copyright (C) 2016-2017 OpenCFD Ltd.
+    Copyright (C) 2016-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -53,6 +53,7 @@ Description
 #include "cellCellStencilObject.H"
 #include "localMin.H"
 #include "oversetAdjustPhi.H"
+#include "oversetCoupledFvPatchField.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -92,10 +93,6 @@ int main(int argc, char *argv[])
         dimensionedScalar("rAUf", dimTime/rho.dimensions(), 1.0)
     );
 
-    if (correctPhi)
-    {
-        #include "correctPhi.H"
-    }
     #include "createUf.H"
     #include "createControls.H"
 
@@ -116,6 +113,7 @@ int main(int argc, char *argv[])
     while (runTime.run())
     {
         #include "readDyMControls.H"
+        #include "readOversetDyMControls.H"
 
         if (LTS)
         {
@@ -154,30 +152,31 @@ int main(int argc, char *argv[])
                         talphaPhi1Corr0.clear();
                     }
 
-                    gh = (g & mesh.C()) - ghRef;
-                    ghf = (g & mesh.Cf()) - ghRef;
-
                     // Update cellMask field for blocking out hole cells
                     #include "setCellMask.H"
                     #include "setInterpolatedCells.H"
                     #include "correctPhiFaceMask.H"
 
-                    // Correct phi on individual regions
-                    if (correctPhi)
-                    {
-                         #include "correctPhi.H"
-                    }
+                    gh = (g & mesh.C()) - ghRef;
+                    ghf = (g & mesh.Cf()) - ghRef;
+
 
                     mixture.correct();
 
                     // Make the flux relative to the mesh motion
                     fvc::makeRelative(phi, U);
+
                 }
 
                 if (mesh.changing() && checkMeshCourantNo)
                 {
                     #include "meshCourantNo.H"
                 }
+            }
+
+            if (adjustFringe)
+            {
+                oversetAdjustPhi(phi, U, zoneIdMass);
             }
 
             #include "alphaControls.H"

@@ -5,7 +5,7 @@
     \\  /    A nd           | www.openfoam.com
      \\/     M anipulation  |
 -------------------------------------------------------------------------------
-    Copyright (C) 2016-2019 OpenCFD Ltd.
+    Copyright (C) 2016-2021 OpenCFD Ltd.
 -------------------------------------------------------------------------------
 License
     This file is part of OpenFOAM.
@@ -38,6 +38,68 @@ namespace Foam
 {
     defineTypeNameAndDebug(oversetFvPatch, 0);
     addToRunTimeSelectionTable(fvPatch, oversetFvPatch, polyPatch);
+}
+
+
+// * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * * //
+
+
+Foam::tmp<Foam::labelField> Foam::oversetFvPatch::interfaceInternalField
+(
+    const labelUList& internalData
+) const
+{
+    // Return all internal values
+    return patchInternalField(internalData);
+}
+
+
+Foam::tmp<Foam::labelField> Foam::oversetFvPatch::interfaceInternalField
+(
+    const labelUList& internalData,
+    const labelUList& faceCells
+) const
+{
+    return patchInternalField(internalData, faceCells);
+}
+
+
+void Foam::oversetFvPatch::initInternalFieldTransfer
+(
+    const Pstream::commsTypes commsType,
+    const labelUList& iF
+) const
+{}
+
+
+void Foam::oversetFvPatch::initInternalFieldTransfer
+(
+    const Pstream::commsTypes commsType,
+    const labelUList& iF,
+    const labelUList& faceCells
+) const
+{}
+
+
+Foam::tmp<Foam::labelField> Foam::oversetFvPatch::internalFieldTransfer
+(
+    const Pstream::commsTypes commsType,
+    const labelUList& iF
+) const
+{
+    return tmp<labelField>(new labelField(iF));
+}
+
+
+Foam::tmp<Foam::labelField> Foam::oversetFvPatch::internalFieldTransfer
+(
+    const Pstream::commsTypes commsType,
+    const labelUList& iF,
+    const labelUList& nbrFaceCells
+) const
+{
+    NotImplemented
+    return tmp<labelField>(new labelField(iF));
 }
 
 
