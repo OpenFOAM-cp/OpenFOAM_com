@@ -82,6 +82,12 @@ public:
         //- Construct by copying/moving tmp content
         GlobalIOField(const IOobject& io, const tmp<Field<Type>>& tf);
 
+        //- Construct and return a clone
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new GlobalIOField<Type>(*this));
+        }
+
 
     //- Destructor
     virtual ~GlobalIOField() = default;

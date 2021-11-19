@@ -73,6 +73,18 @@ public:
         //- Construct from IOobject and transferring surfZoneList content
         surfZoneIOList(const IOobject& io, surfZoneList&& content);
 
+        //- Construct as copy
+        explicit surfZoneIOList(const surfZoneIOList&) = default;
+
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>
+            (
+                new surfZoneIOList(*this)
+            );
+        }
+
 
     //- Destructor
     virtual ~surfZoneIOList() = default;

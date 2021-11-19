@@ -107,6 +107,13 @@ public:
         //- Construct by transferring the List content
         CompactIOList(const IOobject& io, List<T>&& content);
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new CompactIOList<T, BaseType>(*this));
+        }
+
+
     // Destructor
 
         virtual ~CompactIOList() = default;

@@ -155,6 +155,14 @@ public:
             );
 
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            NotImplemented;
+            return nullptr;
+        }
+
+
     //- Destructor
     virtual ~cellSet() = default;
 

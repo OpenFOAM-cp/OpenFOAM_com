@@ -91,6 +91,15 @@ public:
             return refPtr<regIOobject>(new UniformDimensionedField<Type>(io));
         }
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>
+            (
+                new UniformDimensionedField<Type>(*this)
+            );
+        }
+
 
     //- Destructor
     virtual ~UniformDimensionedField();

@@ -260,6 +260,18 @@ public:
         //  If global number of visible cells > 0 becomes active
         explicit refinementHistory(const IOobject&, Istream&);
 
+        //- Copy construct
+        explicit refinementHistory(const refinementHistory&) = default;
+
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>
+            (
+                new refinementHistory(*this)
+            );
+        }
+
 
     // Member Functions
 

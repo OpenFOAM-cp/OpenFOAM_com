@@ -134,6 +134,12 @@ public:
             );
         }
 
+        //- Construct and return a clone. Not applicable for singleton
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new Dual<Type>(*this));
+        }
+
 
     //- Destructor
     virtual ~Dual() = default;

@@ -74,6 +74,12 @@ public:
         //- Construct from IOobject
         explicit rawIOField(const IOobject& io, const bool readAverage);
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new rawIOField<Type>(*this));
+        }
+
 
     //- Destructor
     virtual ~rawIOField() = default;

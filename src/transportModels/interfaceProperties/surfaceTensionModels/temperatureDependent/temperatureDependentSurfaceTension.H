@@ -104,6 +104,13 @@ public:
             const fvMesh& mesh
         );
 
+        //- Construct and return a clone
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            NotImplemented;
+            return nullptr;
+        }
+
 
     //- Destructor
     virtual ~temperatureDependent();

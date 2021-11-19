@@ -106,6 +106,12 @@ public:
         //- Construct by transferring the Field contents
         CompactIOField(const IOobject& io, Field<T>&& content);
 
+        //- Construct and return a clone
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new CompactIOField<T, BaseType>(*this));
+        }
+
 
     //- Destructor
     virtual ~CompactIOField() = default;

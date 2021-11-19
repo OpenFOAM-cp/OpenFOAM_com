@@ -79,6 +79,12 @@ public:
         //- Construct by transferring the List content
         IOList(const IOobject& io, List<T>&& content);
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new IOList<T>(*this));
+        }
+
 
     //- Destructor
     virtual ~IOList() = default;

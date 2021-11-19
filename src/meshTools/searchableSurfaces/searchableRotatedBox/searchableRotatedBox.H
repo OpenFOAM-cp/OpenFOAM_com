@@ -125,6 +125,13 @@ public:
             const dictionary& dict
         );
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            NotImplemented;
+            return nullptr;
+        }
+
 
     //- Destructor
     virtual ~searchableRotatedBox() = default;

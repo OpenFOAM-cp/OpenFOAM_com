@@ -76,7 +76,19 @@ public:
         );
 
         //- Construct as copy
+        explicit featureEdgeMesh(const featureEdgeMesh&) = default;
+
+        //- Construct as copy
         featureEdgeMesh(const IOobject& io, const edgeMesh& em);
+
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>
+            (
+                new featureEdgeMesh(*this)
+            );
+        }
 
 
     // IO

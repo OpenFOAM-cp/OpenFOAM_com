@@ -281,6 +281,15 @@ public:
         //- Clone
         tmp<DimensionedField<Type, GeoMesh>> clone() const;
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>
+            (
+                new DimensionedField<Type, GeoMesh>(*this)
+            );
+        }
+
 
     //- Destructor
     virtual ~DimensionedField() = default;

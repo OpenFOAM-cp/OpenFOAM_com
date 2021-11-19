@@ -138,8 +138,15 @@ public:
 
         searchableSurface(const IOobject& io);
 
-        //- Clone
-        virtual autoPtr<searchableSurface> clone() const
+        ////- Clone
+        //virtual autoPtr<searchableSurface> clone() const
+        //{
+        //    NotImplemented;
+        //    return nullptr;
+        //}
+
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
         {
             NotImplemented;
             return nullptr;

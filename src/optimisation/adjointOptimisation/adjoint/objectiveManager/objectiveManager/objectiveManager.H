@@ -121,6 +121,13 @@ public:
             const word& primalSolverName
         );
 
+        //- Construct and return a clone
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            NotImplemented;
+            return nullptr;
+        }
+
 
     //- Destructor
     virtual ~objectiveManager() = default;

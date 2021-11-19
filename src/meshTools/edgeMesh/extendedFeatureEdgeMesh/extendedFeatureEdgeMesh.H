@@ -123,6 +123,13 @@ public:
             const labelList& regionEdges
         );
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            NotImplemented;
+            return nullptr;
+        }
+
 
     //- Destructor
     virtual ~extendedFeatureEdgeMesh() = default;

@@ -129,6 +129,18 @@ public:
         static bool Delete(const objectRegistry& obr);
 
 
+    // Constructors
+
+        //- Default copy construct
+        explicit exprResultGlobals(const exprResultGlobals&) = default;
+
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new exprResultGlobals(*this));
+        }
+
+
     //- Destructor
     virtual ~exprResultGlobals() = default;
 

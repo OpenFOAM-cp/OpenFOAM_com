@@ -72,6 +72,15 @@ public:
             close();
         }
 
+        //- Construct as copy
+        explicit fieldDictionary(const fieldDictionary&) = default;
+
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new fieldDictionary(*this));
+        }
+
 
     // Member Functions
 

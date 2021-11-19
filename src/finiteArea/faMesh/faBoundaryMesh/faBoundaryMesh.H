@@ -115,6 +115,13 @@ public:
             const label size
         );
 
+        //- Construct and return a clone
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            NotImplemented;
+            return nullptr;
+        }
+
 
     //- Destructor
     ~faBoundaryMesh() = default;

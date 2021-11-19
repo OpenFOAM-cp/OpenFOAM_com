@@ -78,6 +78,12 @@ public:
         //- Construct by transferring the List content
         GlobalIOList(const IOobject& io, List<Type>&& content);
 
+        //- Construct and return a clone. Not applicable for singleton
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new GlobalIOList<Type>(*this));
+        }
+
 
     //- Destructor
     virtual ~GlobalIOList() = default;

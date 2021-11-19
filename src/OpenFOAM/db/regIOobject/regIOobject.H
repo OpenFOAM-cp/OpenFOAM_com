@@ -173,6 +173,9 @@ public:
         //  \returns nullptr if no constructor found
         static refPtr<regIOobject> New(const IOobject& io);
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const = 0;
+
 
     // Declare run-time constructor selection tables
 

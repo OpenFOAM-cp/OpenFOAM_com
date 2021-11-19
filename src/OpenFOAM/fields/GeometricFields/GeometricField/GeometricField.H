@@ -477,6 +477,15 @@ public:
         //- Clone
         tmp<GeometricField<Type, PatchField, GeoMesh>> clone() const;
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>
+            (
+                new GeometricField<Type, PatchField, GeoMesh>(*this)
+            );
+        }
+
 
     // Static Constructors
 

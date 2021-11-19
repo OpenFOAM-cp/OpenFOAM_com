@@ -94,6 +94,15 @@ public:
         //- Construct given an IOobject and Istream
         unwatchedIOdictionary(const IOobject& io, Istream& is);
 
+        //- Default copy construct
+        explicit unwatchedIOdictionary(const unwatchedIOdictionary&) = default;
+
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new unwatchedIOdictionary(*this));
+        }
+
 
     //- Destructor
     virtual ~unwatchedIOdictionary() = default;

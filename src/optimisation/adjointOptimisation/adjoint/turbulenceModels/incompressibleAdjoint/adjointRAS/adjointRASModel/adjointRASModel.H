@@ -203,6 +203,13 @@ public:
                 adjointTurbulenceModel::typeName
         );
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            NotImplemented;
+            return nullptr;
+        }
+
 
     //- Destructor
     virtual ~adjointRASModel() = default;

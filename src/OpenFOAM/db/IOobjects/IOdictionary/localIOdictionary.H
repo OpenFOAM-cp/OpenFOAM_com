@@ -83,6 +83,15 @@ public:
         //- Construct given an IOobject and Istream
         localIOdictionary(const IOobject& io, Istream& is);
 
+        //- Copy construct
+        localIOdictionary(const localIOdictionary&) = default;
+
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new localIOdictionary(*this));
+        }
+
 
     //- Destructor
     virtual ~localIOdictionary() = default;

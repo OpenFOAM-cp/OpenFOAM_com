@@ -118,6 +118,13 @@ public:
             writeOption w=NO_WRITE
         );
 
+        //- Construct and return a clone.
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            NotImplemented;
+            return nullptr;
+        }
+
 
     //- Destructor
     virtual ~pointSet() = default;

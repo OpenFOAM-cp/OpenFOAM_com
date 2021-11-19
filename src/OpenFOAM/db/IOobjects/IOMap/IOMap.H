@@ -66,7 +66,7 @@ public:
     // Constructors
 
         //- Default copy construct
-        IOMap(const IOMap&) = default;
+        explicit IOMap(const IOMap&) = default;
 
         //- Construct from IOobject
         explicit IOMap(const IOobject& io);
@@ -79,6 +79,12 @@ public:
 
         //- Construct by transferring the Map content
         IOMap(const IOobject&, Map<T>&& content);
+
+        //- Construct and return a clone. Not applicable for singleton
+        virtual refPtr<regIOobject> deepClone() const
+        {
+            return refPtr<regIOobject>(new IOMap<T>(*this));
+        }
 
 
     //- Destructor
