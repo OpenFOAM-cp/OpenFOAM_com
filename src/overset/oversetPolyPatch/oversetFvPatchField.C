@@ -328,22 +328,21 @@ void Foam::oversetFvPatchField<Type>::storeFringeCoefficients
 
 
 template<class Type>
-Foam::tmp<Foam::Field<Type>> Foam::oversetFvPatchField<Type>
-::fringeFlux
+void Foam::oversetFvPatchField<Type>::fringeFlux
 (
-    const Field<Type>& psi,
     const fvMatrix<Type>& matrix,
     const surfaceScalarField& phi
 ) const
 {
-    Field<Type> massIn(fringeFaces_.size(), Zero);
-
+    scalar massIn(Zero);
     scalar phiIn(Zero);
+
+    const Field<Type>& psi = matrix.psi();
 
     const scalarField& upper = matrix.upper();
     const scalarField& lower = matrix.lower();
 
-    if (massCorrection_ && this->oversetPatch_.master())
+    if (this->oversetPatch_.master())
     {
         const fvMesh& mesh = this->internalField().mesh();
         const cellCellStencilObject& overlap = Stencil::New(mesh);
@@ -392,20 +391,23 @@ Foam::tmp<Foam::Field<Type>> Foam::oversetFvPatchField<Type>
                 if (neiCalc)
                 {
                     phiIn -= phi[fringei];
-                    massIn[fringesFaces] -= curFlux;
+                    massIn -= curFlux;
                 }
                 else
                 {
                     phiIn += phi[fringei];
-                    massIn[fringesFaces] += curFlux;
+                    massIn += curFlux;
                 }
                 fringesFaces++;
             }
-
         }
     }
 
-    return tmp<Field<Type>>(new Field<Type>(massIn));
+    reduce(massIn, sumOp<scalar>());
+    reduce(phiIn, sumOp<scalar>());
+
+    Info << " gSum(phi) on fringes " << phiIn << endl;
+    Info << " gSum(p.flux) on fringes " << massIn << endl;
 }
 
 
@@ -855,7 +857,7 @@ void Foam::oversetFvPatchField<Type>::manipulateMatrix
 
     if (ovp.master())
     {
-        if (massCorrection_)
+        if (massCorrection_ || (debug & 2))
         {
             storeFringeCoefficients(matrix);
         }

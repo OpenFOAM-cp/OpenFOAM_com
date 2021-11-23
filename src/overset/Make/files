@@ -35,4 +35,6 @@ oversetCoupledPolyPatch/oversetLduInterface/oversetLduInterface.C
 oversetCoupledPolyPatch/oversetGAMGInterface/oversetGAMGInterface.C
 oversetCoupledPolyPatch/oversetGAMGInterfaceField/oversetGAMGInterfaceField.C
 
+oversetPatchPhiErr/oversetPatchPhiErr.C
+
 LIB = $(FOAM_LIBBIN)/liboverset

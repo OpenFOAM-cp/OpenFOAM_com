@@ -718,15 +718,18 @@ void Foam::cellCellStencil::walkFront
     averageVolRatio.transfer(daverageVolRatio);
     label minVolId = findMin(averageVolRatio);
 
-    Info<< " Number layers : " << averageVolRatio.size() << nl
+    Info<< nl << " Number layers : " << averageVolRatio.size() << nl
         << " Average volumetric ratio : " << averageVolRatio << nl
-        << " Number of holes cells : " << dHoles << nl
-        << endl;
+        << " Number of holes cells : " << dHoles << endl;
+
 
     if (useLayer != -1)
     {
         minVolId = useLayer - 1;
     }
+
+    Info<< " Using layer : " << useLayer <<  nl << endl;
+
     allCellTypes.transfer(dataSet[minVolId]);
     allWeight.transfer(dAlllWeight[minVolId]);
 }

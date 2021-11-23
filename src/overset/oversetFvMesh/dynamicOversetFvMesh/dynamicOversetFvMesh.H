@@ -35,7 +35,7 @@ SourceFiles
 #ifndef dynamicOversetFvMesh_H
 #define dynamicOversetFvMesh_H
 
-#include "dynamicMotionSolverFvMesh.H"
+#include "dynamicMotionSolverListFvMesh.H"
 #include "oversetFvMeshBase.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
@@ -49,7 +49,7 @@ namespace Foam
 
 class dynamicOversetFvMesh
 :
-    public dynamicMotionSolverFvMesh,
+    public dynamicMotionSolverListFvMesh,
     public oversetFvMeshBase
 {
     // Private Member Functions
@@ -70,7 +70,7 @@ public:
     // Constructors
 
         //- Construct from IOobject
-        dynamicOversetFvMesh(const IOobject& io);
+        dynamicOversetFvMesh(const IOobject& io,  const bool doInit=true);
 
 
     //- Destructor

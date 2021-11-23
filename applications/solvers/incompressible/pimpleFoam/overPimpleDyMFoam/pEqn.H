@@ -47,10 +47,15 @@ while (pimple.correctNonOrthogonal())
         U.correctBoundaryConditions();
         fvOptions.correct(U);
     }
+    if (oversetPatchErrOutput)
+    {
+        oversetPatchPhiErr(pEqn, phiHbyA);
+    }
 }
 
 // Excludes error in interpolated/hole cells
 #include "continuityErrs.H"
+
 
 {
     Uf = fvc::interpolate(U);

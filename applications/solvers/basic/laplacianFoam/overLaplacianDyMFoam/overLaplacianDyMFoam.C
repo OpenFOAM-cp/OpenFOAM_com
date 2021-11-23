@@ -58,6 +58,7 @@ Description
 #include "fvOptions.H"
 #include "simpleControl.H"
 #include "dynamicFvMesh.H"
+#include "oversetPatchPhiErr.H"
 
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
@@ -99,6 +100,11 @@ int main(int argc, char *argv[])
             fvOptions.constrain(TEqn);
             TEqn.solve();
             fvOptions.correct(T);
+
+            if (oversetPatchErrOutput)
+            {
+                oversetPatchPhiErr(TEqn, dummyPhi);
+            }
         }
 
         #include "write.H"

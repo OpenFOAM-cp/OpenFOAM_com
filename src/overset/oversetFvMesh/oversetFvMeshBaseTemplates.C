@@ -811,15 +811,6 @@ Foam::SolverPerformance<Type> Foam::oversetFvMeshBase::solveOverset
         true
     );
 
-
-    // Print a bit
-    //write(Pout, m, lduAddr(), interfaces());
-    //{
-    //   const fvSolution& sol = static_cast<const fvSolution&>(*this);
-    //    const dictionary& pDict = sol.subDict("solvers").subDict("p");
-    //    writeAgglomeration(GAMGAgglomeration::New(m, pDict));
-    //}
-
     // Use lower level solver
     //SolverPerformance<Type> s(dynamicMotionSolverFvMesh::solve(m, dict));
     SolverPerformance<Type> s(mesh_.fvMesh::solve(m, dict));

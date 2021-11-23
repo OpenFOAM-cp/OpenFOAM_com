@@ -587,8 +587,6 @@ bool Foam::cellCellStencils::trackingInverseDistance::update()
     const labelIOList& zoneID = this->zoneID();
     label nZones = meshParts_.size();
 
-    //label holeLayers(dict_.getOrDefault("holeLayers", 1));
-
     // Update stored mesh partitions for geometry changes
     forAll(meshParts_, zonei)
     {

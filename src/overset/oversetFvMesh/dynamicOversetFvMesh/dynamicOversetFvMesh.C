@@ -37,9 +37,13 @@ namespace Foam
 
 // * * * * * * * * * * * * * * * * Constructors  * * * * * * * * * * * * * * //
 
-Foam::dynamicOversetFvMesh::dynamicOversetFvMesh(const IOobject& io)
+Foam::dynamicOversetFvMesh::dynamicOversetFvMesh
+(
+    const IOobject& io,
+    const bool doInit
+)
 :
-    dynamicMotionSolverFvMesh(io),
+    dynamicMotionSolverListFvMesh(io, doInit),
     oversetFvMeshBase(static_cast<const fvMesh&>(*this))
 {}
 
@@ -54,7 +58,7 @@ Foam::dynamicOversetFvMesh::~dynamicOversetFvMesh()
 
 bool Foam::dynamicOversetFvMesh::update()
 {
-    if (dynamicMotionSolverFvMesh::update())
+    if (dynamicMotionSolverListFvMesh::update())
     {
         oversetFvMeshBase::update();
 
@@ -71,7 +75,7 @@ bool Foam::dynamicOversetFvMesh::writeObject
     const bool valid
 ) const
 {
-    bool ok = dynamicMotionSolverFvMesh::writeObject(streamOpt, valid);
+    bool ok = dynamicMotionSolverListFvMesh::writeObject(streamOpt, valid);
     ok = oversetFvMeshBase::writeObject(streamOpt, valid) && ok;
     return ok;
 }

@@ -23,6 +23,11 @@
 
     phiHbyA += phig;
 
+    if (adjustFringe)
+    {
+        oversetAdjustPhi(phiHbyA, U, zoneIdMass);
+    }
+
     // Update the pressure BCs to ensure flux consistency
     constrainPressure(p_rgh, U, phiHbyA, rAUf, MRF);
 
@@ -51,6 +56,10 @@
 
             U.correctBoundaryConditions();
             fvOptions.correct(U);
+        }
+        if (oversetPatchErrOutput)
+        {
+            oversetPatchPhiErr(p_rghEqn, phiHbyA);
         }
     }
 

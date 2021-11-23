@@ -94,7 +94,6 @@ bool Foam::oversetFvMeshBase::updateAddressing() const
             << " nExtraFaces:" << nExtraFaces << endl;
     }
 
-
     // Now for the tricky bits. We want to hand out processor faces according
     // to the localFaceCells/remoteFaceCells. Ultimately we need
     // per entry in stencil:
@@ -160,7 +159,6 @@ bool Foam::oversetFvMeshBase::updateAddressing() const
     // E.g. if proc1 needs some data from proc2 and proc2 needs some data from
     //      proc1. We first want the pair : proc1 receive and proc2 send
     //      and then the pair : proc1 send, proc2 receive
-
 
     labelList procToInterface(Pstream::nProcs(), -1);
 
@@ -270,11 +268,9 @@ bool Foam::oversetFvMeshBase::updateAddressing() const
         }
     }
 
-
     // Get addressing and interfaces of all interfaces
 
-
-    List<const labelUList*> patchAddr;
+    UPtrList<const labelUList> patchAddr;
     {
         const fvBoundaryMesh& fvp = mesh_.boundary();
 
@@ -286,8 +282,10 @@ bool Foam::oversetFvMeshBase::updateAddressing() const
 
         forAll(fvp, patchI)
         {
-            patchAddr[patchI] = &fvp[patchI].faceCells();
+            //patchAddr[patchI] = &fvp[patchI].faceCells();
+            patchAddr.set(patchI, &fvp[patchI].faceCells());
         }
+
         forAll(remoteStencilInterfaces_, i)
         {
             label patchI = fvp.size()+i;
@@ -300,10 +298,12 @@ bool Foam::oversetFvMeshBase::updateAddressing() const
             //    << " to:" << pp.neighbProcNo()
             //    << " with fc:" << pp.faceCells().size() << endl;
 
-            patchAddr[patchI] = &pp.faceCells();
+            //patchAddr[patchI] = &pp.faceCells();
+            patchAddr.set(patchI, &pp.faceCells());
             allInterfaces_.set(patchI, &pp);
         }
     }
+
     const lduSchedule ps
     (
         lduPrimitiveMesh::nonBlockingSchedule<processorLduInterface>

@@ -2251,6 +2251,18 @@ bool Foam::cellCellStencils::inverseDistance::update()
     scalarList compactCellVol(mesh_.V());
     map.distribute(compactCellVol);
 
+
+    label useLayer = dict_.getOrDefault("useLayer", -1);
+    const dictionary& fvSchemes = mesh_.schemesDict();
+    if (fvSchemes.found("oversetInterpolation"))
+    {
+        const dictionary& intDict = fvSchemes.subDict
+        (
+            "oversetInterpolation"
+        );
+        useLayer = intDict.getOrDefault("useLayer", -1);
+    }
+
     walkFront
     (
         globalCells,
@@ -2262,7 +2274,7 @@ bool Foam::cellCellStencils::inverseDistance::update()
         compactStencil,
         zoneID,
         dict_.getOrDefault("holeLayers", 1),
-        dict_.getOrDefault("useLayer", -1)
+        useLayer
     );
 
     if ((debug&2) && (mesh_.time().outputTime()))

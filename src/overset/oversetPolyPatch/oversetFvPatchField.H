@@ -181,11 +181,10 @@ public:
             void storeFringeCoefficients(const fvMatrix<Type>& matrix);
 
              //- Calculate patch flux (helper function)
-            tmp<Field<Type>> fringeFlux
+            void fringeFlux
             (
-                 const Field<Type>& psi,
-                 const fvMatrix<Type>& matrix,
-                const surfaceScalarField& phi
+                 const fvMatrix<Type>& m,
+                 const surfaceScalarField& phi
             ) const;
 
 

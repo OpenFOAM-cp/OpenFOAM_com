@@ -129,8 +129,7 @@ public:
             smAll,
             smCellSet,
             smCellZone,
-            smPoints
-            smAll,
+            smPoints,
             smCellType
         };
 

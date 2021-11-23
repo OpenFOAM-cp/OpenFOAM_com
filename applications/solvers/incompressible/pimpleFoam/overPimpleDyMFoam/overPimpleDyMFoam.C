@@ -48,7 +48,8 @@ Description
 #include "cellCellStencilObject.H"
 #include "localMin.H"
 #include "oversetAdjustPhi.H"
-#include "oversetCoupledFvPatchField.H"
+#include "oversetPatchPhiErr.H"
+
 // * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * * //
 
 int main(int argc, char *argv[])

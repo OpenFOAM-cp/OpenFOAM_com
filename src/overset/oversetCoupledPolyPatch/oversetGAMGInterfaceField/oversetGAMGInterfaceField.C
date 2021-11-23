@@ -92,34 +92,7 @@ void Foam::oversetGAMGInterfaceField::updateInterfaceMatrix
     const direction cmpt,
     const Pstream::commsTypes
 ) const
-{
-    DebugVar("oversetGAMGInterfaceField::updateInterfaceMatrix::dummy")
-    // Get neighbouring field
-
-//     const labelList& nbrFaceCells =
-//         lduAddr.patchAddr
-//         (
-//             cyclicAMIInterface_.neighbPatchID()
-//         );
-//
-//     solveScalarField pnf(psiInternal, nbrFaceCells);
-//
-//     // Transform according to the transformation tensors
-//     transformCoupleField(pnf, cmpt);
-//
-//     if (cyclicAMIInterface_.owner())
-//     {
-//         pnf = cyclicAMIInterface_.AMI().interpolateToSource(pnf);
-//     }
-//     else
-//     {
-//         pnf = cyclicAMIInterface_.neighbPatch().AMI().interpolateToTarget(pnf);
-//     }
-//
-//     const labelUList& faceCells = lduAddr.patchAddr(patchId);
-//
-//     this->addToInternalField(result, !add, faceCells, coeffs, pnf);
-}
+{}
 
 
 // ************************************************************************* //

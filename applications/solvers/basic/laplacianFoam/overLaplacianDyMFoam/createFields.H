@@ -31,3 +31,22 @@
     Info<< "Reading diffusivity DT\n" << endl;
 
     dimensionedScalar DT("DT", dimViscosity, transportProperties);
+
+    bool oversetPatchErrOutput =
+        simple.dict().getOrDefault("oversetPatchErrOutput", false);
+
+
+    // Dummy phi for oversetPatchErrOutput
+    surfaceScalarField dummyPhi
+    (
+        IOobject
+        (
+            "dummyPhi",
+            runTime.timeName(),
+            mesh,
+            IOobject::NO_READ,
+            IOobject::NO_WRITE
+        ),
+        mesh,
+        dimensionedScalar("zero", dimless, Zero)
+    );

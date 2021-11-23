@@ -153,11 +153,6 @@ int main(int argc, char *argv[])
                     #include "setInterpolatedCells.H"
                     #include "correctPhiFaceMask.H"
 
-                    if (correctPhi)
-                    {
-                        #include "correctPhi.H"
-                    }
-
                     mixture->correct();
 
                     // Make the flux relative to the mesh motion
@@ -187,10 +182,6 @@ int main(int argc, char *argv[])
             mixture->correct();
 
             #include "alphaEqnSubCycle.H"
-            const surfaceScalarField faceMask
-            (
-                localMin<scalar>(mesh).interpolate(cellMask)
-            );
             rhoPhi *= faceMask;
 
             interface.correct();

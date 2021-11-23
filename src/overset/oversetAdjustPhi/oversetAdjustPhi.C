@@ -75,7 +75,7 @@ bool Foam::oversetAdjustPhi
 
             if
             (
-                (ownOrCalc && (zoneId != -1) && (zonei == zoneId))
+                (ownOrCalc && (zonei == zoneId))
               ||(ownOrCalc && (zoneId == -1))
             )
             {
@@ -95,31 +95,6 @@ bool Foam::oversetAdjustPhi
                 {
                     massOut += flux;
                 }
-
-                /*
-                if (neiCalc)
-                {
-                    if (flux > 0)
-                    {
-                        massOut += flux;
-                    }
-                    else
-                    {
-                        massIn -= flux;
-                    }
-                }
-                else
-                {
-                    if (flux > 0)
-                    {
-                        massIn += flux;
-                    }
-                    else
-                    {
-                        massOut -= flux;
-                    }
-                }
-                */
             }
         }
     }
@@ -174,7 +149,7 @@ bool Foam::oversetAdjustPhi
 
     const scalar massCorr = massIn/(massOut + SMALL);
 
-    //if (fv::debug)
+    if (fv::debug)
     {
         Info<< "Zone                    : " << zoneId << nl
             << "mass outflow            : " << massOut << nl
@@ -186,7 +161,7 @@ bool Foam::oversetAdjustPhi
     // Pass2: adjust fluxes
     forAll(own, facei)
     {
-        label zonei = zoneID[own[facei]];   // note:own and nei in same zone
+        label zonei = zoneID[own[facei]];  //own and nei in same zone
 
         label ownType = cellTypes[own[facei]];
         label neiType = cellTypes[nei[facei]];
@@ -203,9 +178,7 @@ bool Foam::oversetAdjustPhi
 
         if
         (
-            (ownOrCalc && (zoneId != -1) && (zonei == zoneId))
-          ||(ownOrCalc && (zoneId == -1))
-
+            (ownOrCalc && (zonei == zoneId))||(ownOrCalc && (zoneId == -1))
         )
         {
             scalar flux = phi[facei];
@@ -222,24 +195,9 @@ bool Foam::oversetAdjustPhi
             {
                 phi[facei] *= Foam::sqrt(massCorr);
             }
-
-//             if (neiCalc)
-//             {
-//                 if (flux > 0)
-//                 {
-//                     phi[facei] *= massCorr;
-//                 }
-//             }
-//             else
-//             {
-//                 if (flux < 0)
-//                 {
-//                     phi[facei] *= massCorr;
-//                 }
-//             }
         }
     }
-/*
+
     forAll(bphi, patchi)
     {
         const fvPatchVectorField& Up = U.boundaryField()[patchi];
@@ -286,54 +244,54 @@ bool Foam::oversetAdjustPhi
             }
         }
     }
-*/
+
 
     // Check correction
-    scalar massOutCheck(0);
-    scalar massInCheck(0);
-
-    forAll(own, facei)
+    if (fv::debug)
     {
-        label zonei = zoneID[own[facei]];
-        label ownType = cellTypes[own[facei]];
-        label neiType = cellTypes[nei[facei]];
+        scalar massOutCheck(0);
+        scalar massInCheck(0);
 
-        bool ownCalc =
-            (ownType == cellCellStencil::CALCULATED)
-            && (neiType == cellCellStencil::INTERPOLATED);
-
-        bool neiCalc =
-            (ownType == cellCellStencil::INTERPOLATED)
-            && (neiType == cellCellStencil::CALCULATED);
-
-        bool ownOrCalc = (ownCalc || neiCalc);
-
-        if
-        (
-            (ownOrCalc && (zoneId != -1) && (zonei == zoneId))
-          ||(ownOrCalc && (zoneId == -1))
-        )
+        forAll(own, facei)
         {
-            scalar flux = phi[facei];
+            label zonei = zoneID[own[facei]];
+            label ownType = cellTypes[own[facei]];
+            label neiType = cellTypes[nei[facei]];
 
-                if (ownCalc)
-                {
-                    flux = -flux;
-                }
+            bool ownCalc =
+                (ownType == cellCellStencil::CALCULATED)
+                && (neiType == cellCellStencil::INTERPOLATED);
 
-                if (flux < 0.0)
-                {
-                    massInCheck -= flux;
-                }
-                else
-                {
-                    massOutCheck += flux;
-                }
+            bool neiCalc =
+                (ownType == cellCellStencil::INTERPOLATED)
+                && (neiType == cellCellStencil::CALCULATED);
+
+            bool ownOrCalc = (ownCalc || neiCalc);
+
+            if
+            (
+                (ownOrCalc && (zonei == zoneId))||(ownOrCalc && (zoneId == -1))
+            )
+            {
+                scalar flux = phi[facei];
+
+                    if (ownCalc)
+                    {
+                        flux = -flux;
+                    }
+
+                    if (flux < 0.0)
+                    {
+                        massInCheck -= flux;
+                    }
+                    else
+                    {
+                        massOutCheck += flux;
+                    }
+            }
         }
     }
 
-    DebugVar(massOutCheck)
-    DebugVar(massInCheck)
     return true;
 }
 

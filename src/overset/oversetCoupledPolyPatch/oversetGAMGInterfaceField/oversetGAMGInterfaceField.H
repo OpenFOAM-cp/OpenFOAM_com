@@ -100,14 +100,6 @@ public:
 
     // Member Functions
 
-        // Access
-
-            //- Return size
-//             label size() const
-//             {
-//                 return cyclicAMIInterface_.size();
-//             }
-
 
         // Interface matrix update
 

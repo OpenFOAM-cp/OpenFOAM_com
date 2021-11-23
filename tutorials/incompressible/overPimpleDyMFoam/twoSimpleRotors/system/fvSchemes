@@ -59,7 +59,7 @@ oversetInterpolation
     method              trackingInverseDistance;
     searchBox           (0 0 0)(0.02 0.01 0.01);
     searchBoxDivisions  3{(64 64 1)};
-    allowHoleDonors     false;
+    allowInterpolatedDonors     false;
 }
 
 fluxRequired

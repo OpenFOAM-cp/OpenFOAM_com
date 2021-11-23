@@ -153,12 +153,6 @@ int main(int argc, char *argv[])
                     #include "setInterpolatedCells.H"
                     #include "correctPhiFaceMask.H"
 
-                    // Correct phi on individual regions
-                    if (correctPhi)
-                    {
-                         #include "correctPhi.H"
-                    }
-
                     mixture.correct();
 
                     // Make the flux relative to the mesh motion
