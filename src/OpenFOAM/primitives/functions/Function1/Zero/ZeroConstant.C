@@ -48,13 +48,26 @@ Foam::Function1Types::ZeroConstant<Type>::ZeroConstant
 {}
 
 
+template<class Type>
+Foam::Function1Types::ZeroConstant<Type>::ZeroConstant
+(
+    const IOobject& io,
+    const dictionary& dict
+)
+:
+    Function1<Type>(io, dict)
+{}
+
+
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class Type>
-void Foam::Function1Types::ZeroConstant<Type>::writeData(Ostream& os) const
+bool Foam::Function1Types::ZeroConstant<Type>::writeData(Ostream& os) const
 {
     Function1<Type>::writeData(os);
     os.endEntry();
+
+    return os.good();
 }
 
 

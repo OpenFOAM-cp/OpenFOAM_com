@@ -283,30 +283,103 @@ Foam::Function1<Type>::New
 }
 
 
-/// template<class Type>
-/// Foam::refPtr<Foam::Function1<Type>>
-/// Foam::Function1<Type>::NewOrDefault
-/// (
-///     HashPtrTable<Function1<Type>>& cache,
-///
-///     const word& entryName,
-///     const dictionary& dict,
-///     const Type& deflt,
-///     enum keyType::option matchOpt
-/// )
-/// {
-///     auto fref
-///     (
-///         Function1<Type>::New(entryName, dict, cache, matchOpt, false)
-///     );
-///
-///     if (!fref)
-///     {
-///         fref.reset(new Function1Types::Constant<Type>("default", deflt));
-///     }
-///
-///     return fref;
-/// }
+template<class Type>
+Foam::refPtr<Foam::Function1<Type>>
+Foam::Function1<Type>::New
+(
+    const IOobject& io,
+    const dictionary& dict,
+    enum keyType::option matchOpt,
+    const bool mandatory
+)
+{
+    // Use the dictionary to find the keyword (allowing wildcards).
+    // Alternative would be to have
+    // a HashTable where the key type uses a wildcard match
+
+
+    refPtr<Function1<Type>> fref;  // return value
+
+    // Lookup from dictionary
+    const entry* eptr = dict.findEntry(io.name(), matchOpt);
+
+    const dictionary* coeffs = (eptr ? eptr->dictPtr() : nullptr);
+
+    word modelType;
+
+    if (coeffs)
+    {
+        // Dictionary entry
+
+        DebugInFunction
+            << "For " << io.name() << " with dictionary entries: "
+            << flatOutput(coeffs->toc()) << nl;
+
+        coeffs->readEntry
+        (
+            "type",
+            modelType,
+            keyType::LITERAL,
+            modelType.empty()  // "type" entry is mandatory if no 'redirect'
+        );
+
+        auto* ctorPtr = IOobjectConstructorTable(modelType);
+
+        if (ctorPtr)
+        {
+            fref = ctorPtr(io, *coeffs);
+        }
+
+        // Fallthrough
+    }
+    else if (eptr)
+    {
+        // Use keyword (potentially a wildcard) instead of entry name
+        //const auto& kw = eptr->keyword();
+
+        ITstream& is = eptr->stream();
+
+        if (is.peek().isWord())
+        {
+            modelType = is.peek().wordToken();
+        }
+//        else
+//        {
+//            // A value - compatibility for reading constant
+//
+//            const Type constValue = pTraits<Type>(is);
+//
+//            return autoPtr<Function1<Type>>
+//            (
+//                new Function1Types::Constant<Type>(io.name(), constValue)
+//            );
+//        }
+
+        Pout<< "io:" << io.name()
+            << " kw:" << eptr->keyword()
+            << " modelType:" << modelType
+            << endl;
+
+        auto* ctorPtr = IOobjectConstructorTable(modelType);
+
+        if (ctorPtr)
+        {
+            fref = ctorPtr(io, *coeffs);
+        }
+    }
+
+    if (mandatory && !fref)
+    {
+        FatalIOErrorInFunction(dict)
+            << "Unknown Function1 type "
+            << modelType << " for " << io.name()
+            << "\n\nValid Function1 types :\n"
+            << IOobjectConstructorTablePtr_->sortedToc() << nl
+            << exit(FatalIOError);
+    }
+
+    return fref;
+}
 
 
 // ************************************************************************* //

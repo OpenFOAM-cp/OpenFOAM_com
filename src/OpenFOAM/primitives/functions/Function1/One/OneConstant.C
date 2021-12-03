@@ -47,6 +47,17 @@ Foam::Function1Types::OneConstant<Type>::OneConstant
 {}
 
 
+template<class Type>
+Foam::Function1Types::OneConstant<Type>::OneConstant
+(
+    const IOobject& io,
+    const dictionary& dict
+)
+:
+    Function1<Type>(io, dict)
+{}
+
+
 // * * * * * * * * * * * * * * * Member Functions  * * * * * * * * * * * * * //
 
 template<class Type>
@@ -71,10 +82,12 @@ Foam::tmp<Foam::Field<Type>> Foam::Function1Types::OneConstant<Type>::integrate
 
 
 template<class Type>
-void Foam::Function1Types::OneConstant<Type>::writeData(Ostream& os) const
+bool Foam::Function1Types::OneConstant<Type>::writeData(Ostream& os) const
 {
     Function1<Type>::writeData(os);
     os.endEntry();
+
+    return os.good();
 }
 
 
