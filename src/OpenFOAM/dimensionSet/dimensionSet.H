@@ -55,7 +55,7 @@ namespace Foam
 {
 
 // Forward Declarations
-
+class dictionary;
 class dimensionSet;
 class dimensionSets;
 
@@ -130,7 +130,7 @@ private:
 
             // Constructors
 
-                 tokeniser(Istream& is);
+                 explicit tokeniser(Istream& is);
 
 
             // Member Functions
@@ -154,8 +154,8 @@ private:
         };
 
 
-        //- Reset exponents to nearest integer if close to it. Used to
-        //  handle reading with insufficient precision.
+        //- Reset exponents to nearest integer if close to it.
+        //  Handles reading with insufficient precision.
         void round(const scalar tol);
 
         dimensionedScalar parse
@@ -164,6 +164,7 @@ private:
             tokeniser& tis,
             const HashTable<dimensionedScalar>&
         ) const;
+
 
 public:
 
@@ -212,8 +213,22 @@ public:
         //- Copy construct
         dimensionSet(const dimensionSet& ds);
 
-        //- Construct from dictionary entry - usually "dimensions".
-        dimensionSet(const dictionary& dict, const word& entryName);
+        //- Construct from dictionary entry (usually "dimensions")
+        //  Dimensionless if non-mandatory and not found.
+        dimensionSet
+        (
+            const word& entryName,  //!< Lookup key. LITERAL (not REGEX)
+            const dictionary& dict,
+            const bool mandatory = true
+        );
+
+        //- Construct from dictionary entry (usually "dimensions")
+        dimensionSet
+        (
+            const dictionary& dict,
+            const word& entryName,  //!< Lookup key. LITERAL (not REGEX)
+            const bool mandatory = true
+        );
 
         //- Construct and return a clone
         autoPtr<dimensionSet> clone() const
@@ -244,6 +259,18 @@ public:
 
 
     // IO
+
+        //- Update the dimensions from dictionary entry.
+        //- FatalIOError if it is found and the number of tokens is incorrect,
+        //- or it is mandatory and not found.
+        //
+        //  \return true if the entry was found.
+        bool readEntry
+        (
+            const word& entryName,      //!< Lookup key. LITERAL (not REGEX)
+            const dictionary& dict,     //!< The dictionary
+            const bool mandatory = true //!< The entry is mandatory
+        );
 
         //- Read using provided units. Used only in initial parsing
         Istream& read

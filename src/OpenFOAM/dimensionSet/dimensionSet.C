@@ -113,7 +113,7 @@ Foam::dimensionSet::dimensionSet(const dimensionSet& ds)
 
 bool Foam::dimensionSet::dimensionless() const
 {
-    for (const scalar& val : exponents_)
+    for (const scalar val : exponents_)
     {
         // ie, mag(val) > smallExponent
         if ((val > smallExponent) || (val < -smallExponent))
