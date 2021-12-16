@@ -42,8 +42,7 @@ int Foam::syntheticTurbulence::randomNumberBox::debug = 0;
 
 // * * * * * * * * * * * * * Private Member Functions  * * * * * * * * * * * //
 
-Foam::boundBox
-Foam::syntheticTurbulence::randomNumberBox::initialiseBoundBox() const
+Foam::vector Foam::syntheticTurbulence::randomNumberBox::initialiseBoundBox()
 {
     // Get patch normal direction into the domain
     const vector nf((-gAverage(p_.nf())).normalise());
@@ -90,23 +89,29 @@ Foam::syntheticTurbulence::randomNumberBox::initialiseBoundBox() const
     );
 
     const bool globalReduction = true;
+    const boundBox bb(localPos, globalReduction);
 
-    return boundBox(localPos, globalReduction);
+    bbSpan_ = bb.span();
+
+    return bb.min();
 }
 
 
 Foam::Pair<Foam::scalar>
 Foam::syntheticTurbulence::randomNumberBox::initialiseDelta() const
 {
-    const boundBox bb(initialiseBoundBox());
-
-    return Pair<scalar>(bb.span()[0]/n_.first(), bb.span()[1]/n_.second());
+    return Pair<scalar>(bbSpan_[0]/n_.first(), bbSpan_[1]/n_.second());
 }
 
 
 Foam::List<Foam::label>
 Foam::syntheticTurbulence::randomNumberBox::initialiseRanges() const
 {
+    if (!Pstream::master())
+    {
+        return labelList();
+    }
+
     List<label> ranges(pTraits<tensor>::nComponents, 0);
     const Vector<label> slice(1, n_.first(), n_.second());
 
@@ -129,6 +134,11 @@ Foam::syntheticTurbulence::randomNumberBox::initialiseRanges() const
 Foam::List<Foam::label>
 Foam::syntheticTurbulence::randomNumberBox::initialiseSliceRanges() const
 {
+    if (!Pstream::master())
+    {
+        return labelList();
+    }
+
     List<label> sliceRanges(pTraits<vector>::nComponents);
 
     for (direction dir = 0; dir < pTraits<vector>::nComponents; ++dir)
@@ -145,6 +155,11 @@ Foam::syntheticTurbulence::randomNumberBox::initialiseSliceRanges() const
 Foam::List<Foam::label>
 Foam::syntheticTurbulence::randomNumberBox::initialiseComponentRanges() const
 {
+    if (!Pstream::master())
+    {
+        return labelList();
+    }
+
     List<label> componentRanges(pTraits<vector>::nComponents);
 
     for (direction dir = 0; dir < pTraits<vector>::nComponents; ++dir)
@@ -159,6 +174,11 @@ Foam::syntheticTurbulence::randomNumberBox::initialiseComponentRanges() const
 Foam::List<Foam::label>
 Foam::syntheticTurbulence::randomNumberBox::initialiseLastSlice() const
 {
+    if (!Pstream::master())
+    {
+        return labelList();
+    }
+
     List<label> lastSlice(pTraits<vector>::nComponents);
 
     for (direction dir = 0; dir < pTraits<vector>::nComponents; ++dir)
@@ -173,10 +193,13 @@ Foam::syntheticTurbulence::randomNumberBox::initialiseLastSlice() const
 Foam::List<Foam::List<Foam::scalar>>
 Foam::syntheticTurbulence::randomNumberBox::initialiseBox()
 {
+    if (!Pstream::master())
+    {
+        return scalarListList();
+    }
+
     List<List<scalar>> box(pTraits<vector>::nComponents, List<scalar>());
 
-    if (Pstream::master())
-    {
         // Initialise: Remaining convenience factors for (e1 e2 e3)
         for (direction dir = 0; dir < pTraits<vector>::nComponents; ++dir)
         {
@@ -194,7 +217,6 @@ Foam::syntheticTurbulence::randomNumberBox::initialiseBox()
                 [&]{ return rndGen_.GaussNormal<scalar>(); }
             );
         }
-    }
 
     return box;
 }
@@ -203,9 +225,6 @@ Foam::syntheticTurbulence::randomNumberBox::initialiseBox()
 Foam::Field<Foam::point>
 Foam::syntheticTurbulence::randomNumberBox::initialisePatchPoints() const
 {
-    const boundBox bb(initialiseBoundBox());
-    const point localMinPt(bb.min());
-
     if (!Pstream::master())
     {
         return pointField();
@@ -225,8 +244,8 @@ Foam::syntheticTurbulence::randomNumberBox::initialisePatchPoints() const
             const point p
             (
                 Zero, // TODO: third direction
-                localMinPt[0] + i*delta_.first(),
-                localMinPt[1] + j*delta_.second()
+                bbMin_[0] + i*delta_.first(),
+                bbMin_[1] + j*delta_.second()
             );
             points[pointi] = p;
             ++pointi;
@@ -322,6 +341,8 @@ Foam::syntheticTurbulence::randomNumberBox::randomNumberBox
 )
 :
     p_(p),
+    bbSpan_(Zero),
+    bbMin_(initialiseBoundBox()),
     fixSeed_(dict.getOrDefault("fixSeed", true)),
     continuous_(dict.getOrDefault("continuous", false)),
     L_

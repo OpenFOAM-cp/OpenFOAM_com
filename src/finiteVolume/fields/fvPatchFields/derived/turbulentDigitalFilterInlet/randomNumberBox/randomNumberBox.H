@@ -63,6 +63,12 @@ class randomNumberBox
         //- Constant reference to patch
         const fvPatch& p_;
 
+        //-
+        vector bbSpan_;
+
+        //-
+        vector bbMin_;
+
         //- Flag to fix the random-number generator seed to 1234 or
         //- generate a new seed based on clock-time per simulation
         const bool fixSeed_;
@@ -118,7 +124,7 @@ class randomNumberBox
     // Private Member Functions
 
         //- Initialise the bounding box in the local coordinate system
-        boundBox initialiseBoundBox() const;
+        vector initialiseBoundBox();
 
         //- Initialise the object: delta
         Pair<scalar> initialiseDelta() const;
