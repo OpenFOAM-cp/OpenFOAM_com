@@ -30,7 +30,6 @@ License
 #include "vector.H"
 #include "cartesianCS.H"
 #include "SubList.H"
-
 #include "OBJstream.H"
 #include "polyBoundaryMesh.H"
 #include "polyMesh.H"
@@ -200,23 +199,23 @@ Foam::syntheticTurbulence::randomNumberBox::initialiseBox()
 
     List<List<scalar>> box(pTraits<vector>::nComponents, List<scalar>());
 
-        // Initialise: Remaining convenience factors for (e1 e2 e3)
-        for (direction dir = 0; dir < pTraits<vector>::nComponents; ++dir)
-        {
-            List<scalar>& randomSet = box[dir];
+    // Initialise: Remaining convenience factors for (e1 e2 e3)
+    for (direction dir = 0; dir < pTraits<vector>::nComponents; ++dir)
+    {
+        List<scalar>& randomSet = box[dir];
 
-            randomSet = List<scalar>(componentRanges_[dir]);
+        randomSet = List<scalar>(componentRanges_[dir]);
 
-            // Initialise: Random-box content with
-            // random-number sets, generate random-number sets
-            // obeying the standard normal distribution
-            std::generate
-            (
-                randomSet.begin(),
-                randomSet.end(),
-                [&]{ return rndGen_.GaussNormal<scalar>(); }
-            );
-        }
+        // Initialise: Random-box content with
+        // random-number sets, generate random-number sets
+        // obeying the standard normal distribution
+        std::generate
+        (
+            randomSet.begin(),
+            randomSet.end(),
+            [&]{ return rndGen_.GaussNormal<scalar>(); }
+        );
+    }
 
     return box;
 }
@@ -295,7 +294,7 @@ Foam::syntheticTurbulence::randomNumberBox::initialisePatchFaces() const
 Foam::primitivePatch
 Foam::syntheticTurbulence::randomNumberBox::initialisePatch() const
 {
-    //if (debug)
+    if (Pstream::master())
     {
         const auto& tm = p_.patch().boundaryMesh().mesh().time();
         OBJstream os(tm.path()/"patch.obj");

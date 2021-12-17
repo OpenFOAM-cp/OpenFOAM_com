@@ -339,10 +339,6 @@ void Foam::turbulentDigitalFilterInletFvPatchVectorField::updateCoeffs()
     if (curTimeIndex_ != db().time().timeIndex())
     {
         vectorField& U = *this;
-        /*if (U.size())
-        {
-            U = Zero;
-        }*/
         U = Zero;
         vectorField virtualField;
 
