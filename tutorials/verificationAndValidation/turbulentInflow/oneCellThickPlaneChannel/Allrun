@@ -31,10 +31,7 @@ collect() {
 
     [ $# -eq 0 ] && { echo "Usage: $0 dir-model"; exit 1; }
 
-    collection="$1"
-
-    dirResult=results/"$collection"
-    dirSettings="$dirResult"/settings
+    dirResult=results/"$1"
 
     if [ ! -d "$dirResult" ]
     then
@@ -42,14 +39,14 @@ collect() {
         echo "      # Collecting results and settings into $dirResult"
 
         mkdir -p "$dirResult"
-        mkdir -p "$dirSettings"
 
+        mv -f 0 "$dirResult"
+        mv -f constant "$dirResult"
+        mv -f system "$dirResult"
         mv -f $(foamListTimes) "$dirResult"
         [ -d postProcessing ] && mv -f postProcessing "$dirResult"
         [ -d processor0 ] && mv -f processor* "$dirResult"
         mv -f log.* "$dirResult"
-        cp -f system/{fv*,controlDict} constant/*Properties "$dirSettings"
-        mv -f 0/ "$dirSettings"
 
         echo "      # Cleaning up the case"
 
