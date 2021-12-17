@@ -8,8 +8,8 @@ writeControl    onEnd;
 
 fields
 (
-    columnAverage:columnAverage(UMean)
-    columnAverage:columnAverage(UPrime2Mean)
+    columnAverage(UMean)
+    columnAverage(UPrime2Mean)
 );
 
 sets
