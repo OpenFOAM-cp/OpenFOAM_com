@@ -104,7 +104,7 @@ class turbulentDigitalFilterInletFvPatchVectorField
             const enum kernelType kernelType_;
 
             //- Kernel coefficients corresponding to L [-]
-            const List<List<scalar>> kernel_; // const Tensor<scalarList> kernel_;
+            const List<List<scalar>> kernel_;
 
 
         //- Patch normal into the domain
