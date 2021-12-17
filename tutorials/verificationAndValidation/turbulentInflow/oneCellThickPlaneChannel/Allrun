@@ -107,11 +107,11 @@ do
     runApplication -s columnAverage \
         postProcess -func columnAverage -latestTime
 
-    runApplication -s sampleCellPatchConstrained \
-        postProcess -func sampleCellPatchConstrained -latestTime
+    runApplication -s sample-cellPatchConstrained \
+        postProcess -func sample-cellPatchConstrained -latestTime
 
-    runApplication -s sampleCellPoint \
-        postProcess -func sampleCellPoint -latestTime
+    runApplication -s sample-cellPoint \
+        postProcess -func sample-cellPoint -latestTime
 
     collect "$setup"
 

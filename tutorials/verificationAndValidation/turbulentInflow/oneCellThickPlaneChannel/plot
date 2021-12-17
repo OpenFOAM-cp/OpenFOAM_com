@@ -20,7 +20,7 @@ plot_R_patch() {
 
     endTime=$(foamDictionary results/$setup/system/controlDict -entry endTime -value)
     benchmarkFile="$FOAM_TUTORIALS/resources/dataset/ReTau-395/chan395.reystress"
-    sampleFile="results/$setup/postProcessing/sampleCellPoint/$endTime/inletPatch_columnAverage(UPrime2Mean).xy"
+    sampleFile="results/$setup/postProcessing/sample-cellPoint/$endTime/inletPatch_columnAverage(UPrime2Mean).xy"
     image="plots/$setup/R_patch.png"
 
     gnuplot<<PLT_R_PATCH
@@ -62,7 +62,7 @@ plot_R_cell() {
 
     endTime=$(foamDictionary results/$setup/system/controlDict -entry endTime -value)
     benchmarkFile="$FOAM_TUTORIALS/resources/dataset/ReTau-395/chan395.reystress"
-    sampleFile="results/$setup/postProcessing/sampleCellPoint/$endTime/inletCell_columnAverage(UPrime2Mean).xy"
+    sampleFile="results/$setup/postProcessing/sample-cellPoint/$endTime/inletCell_columnAverage(UPrime2Mean).xy"
     image="plots/$setup/R_cell.png"
 
     gnuplot<<PLT_R_CELL
@@ -104,7 +104,7 @@ plot_UMean_patch() {
 
     endTime=$(foamDictionary results/$setup/system/controlDict -entry endTime -value)
     benchmarkFile="$FOAM_TUTORIALS/resources/dataset/ReTau-395/chan395.means"
-    sampleFile="results/$setup/postProcessing/sampleCellPoint/$endTime/inletPatch_columnAverage(UMean).xy"
+    sampleFile="results/$setup/postProcessing/sample-cellPoint/$endTime/inletPatch_columnAverage(UMean).xy"
     image="plots/$setup/UMean_patch.png"
 
     gnuplot<<PLT_UMEAN_PATCH

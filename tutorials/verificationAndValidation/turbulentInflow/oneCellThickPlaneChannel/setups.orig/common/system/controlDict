@@ -68,6 +68,9 @@ functions
             }
         );
     }
+
+    #include "probes-cellPoint-xcorrs"
+    #include "probes-cellPatchConstrained-xcorrs"
 }
 
 
