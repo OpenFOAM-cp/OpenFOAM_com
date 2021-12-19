@@ -1,6 +1,6 @@
 ## About OpenFOAM
-OpenFOAM is a free, open source CFD software [released and developed by OpenCFD Ltd since 2004](http://www.openfoam.com/history/).
-It has a large user base across most areas of engineering and science, from both commercial and academic organisations.
+OpenFOAM&reg; is a Free, Libre and Open Source Software (FLOSS) for Computational Fluid Dynamics (CFD) [released and developed by OpenCFD&reg; Ltd since 2004](http://www.openfoam.com/history/).
+It has a large user base across most areas of engineering and science, from both commercial and academic organizations.
 OpenFOAM has an extensive range of features to solve anything from complex fluid flows involving chemical reactions, turbulence and heat transfer, to acoustics, solid mechanics and electromagnetics.
 [See documentation](http://www.openfoam.com/documentation)
 
@@ -24,16 +24,16 @@ may redistribute files.
 
 ## OpenFOAM Trademark
 
-OpenCFD Ltd grants use of its OpenFOAM trademark by Third Parties on a
-licence basis. ESI Group and OpenFOAM Foundation Ltd are currently
-permitted to use the Name and agreed Domain Name. For information on
+OpenCFD Ltd grants use of its OpenFOAM trademark by third parties on a
+license basis. ESI Group and OpenFOAM Foundation Ltd are currently
+permitted to use the name and agreed domain name. For information on
 trademark use, please refer to the
 [trademark policy guidelines][link trademark].
 
 Please [contact OpenCFD](http://www.openfoam.com/contact) if you have
 any questions about the use of the OpenFOAM trademark.
 
-Violations of the Trademark are monitored, and will be duly prosecuted.
+Violations of the trademark are monitored, and will be duly prosecuted.
 
 
 ## Using OpenFOAM
@@ -41,8 +41,9 @@ Violations of the Trademark are monitored, and will be duly prosecuted.
 If OpenFOAM has already been compiled on your system, simply source
 the appropriate `etc/bashrc` or `etc/cshrc` file and get started.
 For example, for the OpenFOAM-v2106 version:
+
 ```
-source /installation/path/OpenFOAM-v2106/etc/bashrc
+source/installation/path/OpenFOAM-v2106/etc/bashrc
 ```
 
 ## Compiling OpenFOAM
