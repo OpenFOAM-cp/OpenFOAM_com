@@ -1,3 +1,7 @@
+## About this repository
+
+This repository is hard fork of of the official OpenFOAM repository on GitLab. The main goal of this repo, and this organization, is to make the software more cross-platform. 
+
 ## About OpenFOAM
 OpenFOAM&reg; is a Free, Libre and Open Source Software (FLOSS) for Computational Fluid Dynamics (CFD) [released and developed by OpenCFD&reg; Ltd since 2004](http://www.openfoam.com/history/).
 It has a large user base across most areas of engineering and science, from both commercial and academic organizations.
